@@ -5,7 +5,7 @@ export class HomeComponent extends ViewComponent {
     isPublic = true;
     template = `
         <div>
-            Hello world!
+            <h2>Hello world!</h2>
             <p>
             I'm an easy component with a button
             </p>
