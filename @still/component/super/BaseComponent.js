@@ -164,6 +164,8 @@ export class BaseComponent extends BehaviorComponent {
             field => {
 
                 const fieldInspect = this[field];
+                if (fieldInspect instanceof Function) return false;
+
                 if (fieldInspect?.name == 'Prop'
                     || fieldInspect?.onlyPropSignature)
                     return true;

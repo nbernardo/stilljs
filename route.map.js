@@ -5,6 +5,7 @@ export const stillRoutesMap = {
 
     viewRoutes: {
         regular: {
+            BasicForm: 'app/components/form-demo',
             CounterComponent: 'app/components/counter',
             HomeWithEvent: 'app/components',
             HomeComponent: 'app/home',
