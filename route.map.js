@@ -5,6 +5,7 @@ export const stillRoutesMap = {
 
     viewRoutes: {
         regular: {
+            CounterComponent: 'app/components/counter',
             HomeWithEvent: 'app/components',
             HomeComponent: 'app/home',
         },
