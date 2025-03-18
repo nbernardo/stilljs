@@ -5,6 +5,7 @@ export const stillRoutesMap = {
 
     viewRoutes: {
         regular: {
+            HomeWithEvent: 'app/components',
             HomeComponent: 'app/home',
         },
         lazyInitial: {}

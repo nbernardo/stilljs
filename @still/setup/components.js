@@ -22,7 +22,7 @@ const $stillLoadScript = (path, className, base = null) => {
 
 }
 
-const ProduceComponentType = { parentCmp: '', registerCls: false };
+const ProduceComponentType = { parentCmp: '', registerCls: false, urlRequest: false };
 
 export const loadComponentFromPath = (path, className, callback = () => { }) => {
 
@@ -206,11 +206,11 @@ export class Components {
     }
 
     static async produceComponent(params = ProduceComponentType) {
+        if (!params.cmp) return;
+        const { cmp, parentCmp, registerCls, urlRequest: url } = params;
 
-        const { cmp, parentCmp, registerCls } = params;
-
-        let clsName = cmp, cmpPath, template, folderPah, exception,
-            isVendorCmp = (cmp || []).at(0) == '@';
+        let clsName = cmp, isVendorCmp = (cmp || []).at(0) == '@', cmpPath,
+            template, folderPah, exception, baseUrl;
 
         /** the bellow line clears previous component from memory
          * @type { ViewComponent } */
@@ -232,7 +232,8 @@ export class Components {
             }
 
             if (cmpRoute.at(-1) == '/') cmpRoute = cmpRoute.slice(0, -1);
-            folderPah = `${Router.baseUrl}${cmpRoute}`;
+            baseUrl = Router.getCleanUrl(url, clsName);
+            folderPah = `${baseUrl}${cmpRoute}`;
             cmpPath = `${folderPah}/${clsName}`;
         }
 
@@ -265,7 +266,7 @@ export class Components {
             //newInstance.template = Components.parseTemlpateCssToScope(newInstance.template);
             return {
                 newInstance, template: newInstance.template,
-                _class: !registerCls ? null : cmpCls[clsName]
+                _class: !registerCls && !url ? null : cmpCls[clsName]
             };
 
         } catch (error) {
@@ -320,7 +321,7 @@ export class Components {
         ).then(async () => {
 
             //Components.preProcessAnnotations();
-            $still.context.currentView = StillAppSetup.instance.init();
+            $still.context.currentView = await StillAppSetup.instance.init();
 
             /**  @type { ViewComponent } */
             const currentView = $still.context.currentView;

@@ -361,7 +361,6 @@ export class Router {
 
     }
 
-
     static noPermAccessProcess(isPrivate, appPlaceholder) {
 
         const isUnauthorized = isPrivate && !AppTemplate.get().isAuthN();
@@ -373,5 +372,57 @@ export class Router {
         return false;
 
     }
+
+    static getUrlPath() {
+        const path = window.location.hash;
+        const address = path.split('/')[1]?.trim();
+        const route = Router.routeMap[address];
+        return route ? { address, route } : false;
+    }
+
+    static listenUrlChange() {
+
+        const { address } = Router.getUrlPath();
+        if (!address)
+            window.location.assign('#');
+
+        window.addEventListener('popstate', () => {
+
+            const route = Router.getUrlPath().address;
+            if (route)
+                Router.goto(route);
+            else
+                console.log(`UUKNOWN ROUTE`);
+
+        });
+    }
+
+    static async getComponentFromPath() {
+        const route = Router.getUrlPath();
+        let cmpCls;
+        if (route.address) {
+            cmpCls = await (
+                await Components.produceComponent(
+                    { cmp: route.address, urlRequest: true }
+                )
+            );
+        }
+        return cmpCls?._class;
+    }
+
+    static getCleanUrl(url, clsName) {
+
+        let baseUrl = Router.baseUrl;
+
+        if (baseUrl.indexOf(`//${clsName}`))
+            baseUrl = Router.baseUrl.replace(`//${clsName}`, '/');
+
+        if (url)
+            baseUrl = Router.baseUrl.replace(`/${clsName}`, '');
+
+        return baseUrl;
+
+    }
+
 }
-window.Router = Router;
+//window.Router = Router;
