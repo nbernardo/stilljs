@@ -9,11 +9,7 @@ import { UUIDUtil } from "../util/UUIDUtil.js";
 
 export class Router {
 
-    static routeMap = {
-        ...stillRoutesMap.viewRoutes.lazyInitial,
-        ...stillRoutesMap.viewRoutes.regular
-    };
-
+    static routeMap;
     static baseUrl = window.location.href.replace('#', '');
 
     #data = {};
@@ -105,7 +101,7 @@ export class Router {
 
 
         const routeInstance = $stillGetRouteMap()
-        const route = routeInstance.route[cmp];
+        const route = routeInstance.route[cmp]?.path;
 
         const cmpRegistror = $still.context.componentRegistror.componentList;
         const isHomeCmp = StillAppSetup.get().entryComponentName == cmp;
@@ -152,6 +148,8 @@ export class Router {
                 .then(async ({ imported, isRoutable }) => {
                     if (!Router.importedMap[cmp]) {
                         if (cmp == 'init') return;
+
+                        if ('address' in cmp) cmp = cmp.address;
 
                         /** the bellow line clears previous component from memory
                          * @type { ViewComponent } */
@@ -374,27 +372,56 @@ export class Router {
     }
 
     static getUrlPath() {
-        const path = window.location.hash;
-        const address = path.split('/')[1]?.trim();
-        const route = Router.routeMap[address];
-        return route ? { address, route } : false;
+
+        let path = window.location.hash, address;
+        let cleanPath = path.replace('#', '');
+        let route = Router.routeMap[cleanPath];
+
+        if (path.split('/').length > 2 || route?.isUrl) {
+
+            route = route.path.split('/');
+            address = `${route.pop()}`;
+            path = `#/${address}`;
+            route = route.join('/');
+
+        } else {
+
+            address = path.split('/')[1]?.trim();
+            route = Router.routeMap[address]?.path;
+
+        }
+
+        return route ? { address, route, path } : { state: false, path };
+
     }
 
     static listenUrlChange() {
 
-        const { address } = Router.getUrlPath();
+        const { address, path } = Router.getUrlPath();
         if (!address)
             window.location.assign('#');
 
         window.addEventListener('popstate', () => {
 
-            const route = Router.getUrlPath().address;
-            if (route)
-                Router.goto(route);
-            else
-                console.log(`UUKNOWN ROUTE`);
+            const route = Router.getUrlPath();
+
+            if (route.path != '' && route.path != '#/') {
+                if (route.address)
+                    Router.goto(route);
+                else {
+                    const pathValue = route.path.replace('#/', '/');
+                    const err = $stillconst.MSG.UNKNOWN_ROUTE.replace('{{}}', pathValue)
+                    document.write(err);
+                }
+            }
 
         });
+    }
+
+    static unknownRouteError() {
+        const pathValue = route.path.replace('#/', '/');
+        const err = $stillconst.MSG.UNKNOWN_ROUTE.replace('{{}}', pathValue)
+        document.write(err);
     }
 
     static async getComponentFromPath() {
@@ -414,15 +441,63 @@ export class Router {
 
         let baseUrl = Router.baseUrl;
 
-        if (baseUrl.indexOf(`//${clsName}`))
+        const currentUrl = baseUrl.split('//');
+        if (currentUrl.length > 2)
+            baseUrl = currentUrl.slice(0, 2).join('//') + '/';
+
+        /** Edge case where the path is valid and component exists */
+        if (baseUrl.indexOf(`//${clsName}`) > 0)
             baseUrl = Router.baseUrl.replace(`//${clsName}`, '/');
 
         if (url)
-            baseUrl = Router.baseUrl.replace(`/${clsName}`, '');
+            baseUrl = baseUrl.replace(`/${clsName}`, '');
+
+        /** Case where # or #/ was entered as the path */
+        baseUrl = baseUrl.slice(-2) == '//' ? baseUrl.slice(0, -1) : baseUrl;
 
         return baseUrl;
 
     }
 
+    static parsedRouteMap = {};
+    static async parseRouteMap() {
+
+        return new Promise((resolve) => {
+
+            if (Object.keys(Router.parsedRouteMap).length == 0) {
+                Object.entries(stillRoutesMap.viewRoutes.regular).map(([name, address]) => {
+
+                    const path = address.url
+                        .split('')
+                        .map(
+                            (ltr, idx) =>
+                                ltr === ltr.toUpperCase()
+                                    && idx > 1
+                                    && ltr != '/'
+                                    && ltr != '-'
+                                    && address.url[idx - 1] != '/'
+                                    ? `-${ltr.toLowerCase()}`
+                                    : ltr.toLowerCase()
+                        )
+                        .join('');
+
+                    Router.parsedRouteMap[path] = {
+                        path: address.path + '/' + name,
+                        isUrl: true
+                    };
+                });
+                const { regular } = stillRoutesMap.viewRoutes;
+                stillRoutesMap.viewRoutes.regular = { ...regular, ...Router.parsedRouteMap };
+                Router.routeMap = {
+                    ...stillRoutesMap.viewRoutes.lazyInitial,
+                    ...stillRoutesMap.viewRoutes.regular
+                };
+
+            };
+            resolve('');
+
+        })
+
+    }
+
 }
-//window.Router = Router;
