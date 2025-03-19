@@ -5,10 +5,10 @@ export const stillRoutesMap = {
 
     viewRoutes: {
         regular: {
-            BasicForm: 'app/components/form-demo',
-            CounterComponent: 'app/components/counter',
-            HomeWithEvent: 'app/components',
-            HomeComponent: 'app/home',
+            BasicForm: { path: 'app/components/form-demo', url: '/form-demo/BasicForm' },
+            CounterComponent: { path: 'app/components/counter', url: '/counter/CounterComponent' },
+            HomeWithEvent: { path: 'app/components', url: '/HomeWithEvent' },
+            HomeComponent: { path: 'app/home', url: '/HomeComponent' },
         },
         lazyInitial: {}
     },
