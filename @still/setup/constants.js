@@ -42,6 +42,11 @@ export const $stillconst = {
                         <b>Unauthorized Access:</b> You're trying to access a  a private component or View/Page, 
                            <br>in case you need to access it without making log-in please make isPublic flag true
                      </h3>`,
+
+        UNKNOWN_ROUTE: `<h3 style='color:red;' id="${ST_UNAUTHOR_ID}">
+                        <b>Invalid Route:</b> You're trying to access a non existing route {{}}.
+                           <br>Make sure you're spelling it correctly
+                     </h3>`,
     },
     NO_TEMPLATE: `<div style="
                         margin: 0 auto; 

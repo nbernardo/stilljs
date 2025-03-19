@@ -133,7 +133,6 @@ export class Components {
     services = new Map();
     static subscriptions = {};
     static stAppInitStatus = true;
-    static routesMap = Router.routeMap;
     static baseUrl = Router.baseUrl;
     static vendorPath = `${Router.baseUrl}@still/vendors`;
 
@@ -223,7 +222,7 @@ export class Components {
             folderPah = `${Components.baseUrl}@still/vendors/${clsPath.join('/').slice(1)}`;
             cmpPath = `${folderPah}/${clsName}`;
         } else {
-            let cmpRoute = Router.routeMap[clsName];
+            let cmpRoute = Router.routeMap[clsName]?.path;
             if (!cmpRoute) {
                 StillError.handleStComponentNotFound(
                     'TypeError', parentCmp, clsName
@@ -1455,7 +1454,7 @@ export class Components {
 
     setHomeComponent(cmp) {
         this.entryComponentName = cmp.name;
-        this.entryComponentPath = stillRoutesMap.viewRoutes.regular[cmp.name];
+        this.entryComponentPath = stillRoutesMap.viewRoutes.regular[cmp.name]?.path;
     }
 
     setServicePath(path) {

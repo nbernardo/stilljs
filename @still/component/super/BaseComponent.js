@@ -306,7 +306,7 @@ export class BaseComponent extends BehaviorComponent {
                     /** Check if the match isn't only coencidence 
                      * (e.g. number and number1 are similir in the begining) 
                      * */
-                    if (!nextChar.replace(`@${field}`, '')[0].match(/[A-Za-z0-9]/)) {
+                    if (!nextChar.replace(`@${field}`, '')[0]?.match(/[A-Za-z0-9]/)) {
 
                         let data = currentClass[field];
                         if (data instanceof Object) {
@@ -932,7 +932,7 @@ export class BaseComponent extends BehaviorComponent {
 
                     if (retryCounter < 8) retryCounter++
                     const content = JSON.parse(error.message);
-                    const path = $stillGetRouteMap().route[content.component];
+                    const { path } = $stillGetRouteMap().route[content.component];
 
                     const script = $stillLoadScript(path, content.component);
                     document.head.insertAdjacentElement('beforeend', script);
