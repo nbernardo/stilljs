@@ -162,6 +162,7 @@ export class Components {
         }
 
         cntr.innerHTML = this.template;
+        Components.handleMarkedToRemoveParts();
     }
 
     renderOUtsideOnViewFor(placeHolder, template) {
@@ -330,6 +331,11 @@ export class Components {
                 $still.context.currentView = await (
                     await Components.produceComponent({ cmp: this.entryComponentName })
                 ).newInstance;
+
+                if (!AppTemplate.get().isAuthN() && !$still.context.currentView.isPublic)
+                    return document.write($stillconst.MSG.PRIVATE_CMP);
+
+
                 setTimeout(() => $still.context.currentView.parseOnChange(), 500);
                 StillAppSetup.register($still.context.currentView.constructor);
                 this.template = this.getHomeCmpTemplate($still.context.currentView);
@@ -393,6 +399,7 @@ export class Components {
             setTimeout(() => cmp.parseOnChange(), 500);
             this.template = this.getNewParsedComponent(cmp).getTemplate();
             this.renderOnViewFor('stillUiPlaceholder');
+            Components.handleMarkedToRemoveParts();
         } else {
             document.body.innerHTML = ($stillconst.MSG.PRIVATE_CMP);
         }
