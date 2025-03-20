@@ -467,19 +467,7 @@ export class Router {
             if (Object.keys(Router.parsedRouteMap).length == 0) {
                 Object.entries(stillRoutesMap.viewRoutes.regular).map(([name, address]) => {
 
-                    const path = address.url
-                        .split('')
-                        .map(
-                            (ltr, idx) =>
-                                ltr === ltr.toUpperCase()
-                                    && idx > 1
-                                    && ltr != '/'
-                                    && ltr != '-'
-                                    && address.url[idx - 1] != '/'
-                                    ? `-${ltr.toLowerCase()}`
-                                    : ltr.toLowerCase()
-                        )
-                        .join('');
+                    const path = address.url;
 
                     Router.parsedRouteMap[path] = {
                         path: address.path + '/' + name,
