@@ -1,8 +1,8 @@
 
-        /**
-         * Don't change the constante name as it'll impact on the component routing
-         */
-        
+/**
+ * Don't change the constante name as it'll impact on the component routing
+ */
+
 export const stillRoutesMap = {
     viewRoutes: {
         regular: {
@@ -29,6 +29,14 @@ export const stillRoutesMap = {
             FormatedDataTable: {
                 path: "app/components/styling",
                 url: "/stylin/formated-data-table"
+            },
+            UserForm: {
+                path: "app/components/user",
+                url: "/user/user-form"
+            },
+            UserGrid: {
+                path: "app/components/user",
+                url: "/user/user-grid"
             }
         },
         lazyInitial: {}
@@ -38,9 +46,10 @@ export const stillRoutesMap = {
 
 export function $stillGetRouteMap() {
 
-	return {		route: {
-			...stillRoutesMap.viewRoutes.regular,
-			...stillRoutesMap.viewRoutes.lazyInitial
-		},
-	}
+    return {
+        route: {
+            ...stillRoutesMap.viewRoutes.regular,
+            ...stillRoutesMap.viewRoutes.lazyInitial
+        },
+    }
 }

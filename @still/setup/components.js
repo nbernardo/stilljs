@@ -1106,7 +1106,7 @@ export class Components {
                     StillAppSetup.register(cmp);
 
                     const allProps = Object.entries(props);
-                    for (const [prop, value] of allProps) {
+                    for (let [prop, value] of allProps) {
 
                         if (prop == 'ref') ComponentRegistror.add(value, cmp);
 
@@ -1120,9 +1120,23 @@ export class Components {
                                 continue;
                             }
 
-                            if (String(value).toLowerCase().indexOf('parent.') == 0) {
+                            let prefix = String(value).toLowerCase();
 
-                                const parentProp = parentCmp[value.replace('parent.', '')];
+                            if (prefix.startsWith('parent.')) prefix = 'parent.';
+                            else if (prefix.startsWith('self.')) prefix = 'self.';
+                            else prefix = '';
+
+                            if (prefix == '') {
+                                value = value.trim();
+                                if (
+                                    !isNaN(value)
+                                    || (value.startsWith('\'') && value.endsWith('\''))
+                                ) cmp[prop] = value;
+                            }
+
+                            else if (String(value).toLowerCase().startsWith(prefix) || prefix == '') {
+
+                                const parentProp = parentCmp[value.replace(prefix, '').trim()];
                                 if (parentProp?.onlyPropSignature) cmp[prop] = parentProp.value;
                                 else cmp[prop] = parentProp?.value || parentProp;
 
@@ -1502,6 +1516,11 @@ export class Components {
 
     /** @returns { ViewComponent } */
     static getComponentFromRef(name) {
+        return ComponentRegistror.getFromRef(name);
+    }
+
+    /** @returns { ViewComponent } */
+    static getFromRef(name) {
         return ComponentRegistror.getFromRef(name);
     }
 

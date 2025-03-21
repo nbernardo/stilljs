@@ -392,30 +392,28 @@ export class BaseComponent extends BehaviorComponent {
             /\(click\)\=\"[a-zA-Z \(\)'\,\.]{0,}/gi,
             (mt) => {
 
-                const methodName = mt.split('="')[1];
+                const methodName = mt.split('="')[1], otherParams = mt.split(",");
+                let data = otherParams[1]?.trim().replace(/\'/g, ''),
+                    routeName = otherParams[0]?.split('\'')[1]?.trim(),
+                    urlFlag = otherParams[2]?.replace(')', '')
+
                 if (methodName.indexOf('goto(\'') == 0) {
-                    let params = methodName.split("'"), data;
-                    if (params.length > 2) {
-
-                        if (params[3]) data = params[3].trim();
-                        else {
-
-                            const stateParam = params[2]
-                                .replace(' ', '')
-                                .replace(',', '')
-                                .replace(')', '');
-
-                            if (stateParam.startsWith('self.'))
-                                data = this[stateParam.replace('self.', '')];
-                        }
-
+                    if (data) {
+                        if (data.startsWith('self.'))
+                            data = this[data.replace('self.', '')];
                     }
 
-                    if (!data) {
-                        return `onclick="Router.goto('${params[1].trim()}')`
+                    if (urlFlag) {
+                        if (urlFlag.startsWith('self.'))
+                            urlFlag = this[urlFlag.replace('self.', '')];
+                        urlFlag = [true, 'true'].includes(urlFlag);
+                    }
+
+                    if (!data || data == 'null') {
+                        return `onclick="Router.aliasGoto1('${routeName}',${urlFlag})`
                     }
                     data = Router.routingDataParse(data);
-                    return `onclick="Router.aliasGoto('${params[1].trim()}','${data}')`;
+                    return `onclick="Router.aliasGoto('${routeName}','${data}', ${urlFlag})`;
                 }
                 return mt.replace('(click)="', `onclick="${cmd}.`);;
             }
@@ -990,7 +988,9 @@ export class BaseComponent extends BehaviorComponent {
 
             parentCmp[propMap['proxy']] = { on: () => { } };
             const { component, ref, proxy: p, each, ...tagProps } = propMap;
-            const isThereProp = Object.keys(tagProps).length > 0;
+            const foundProps = Object.values(tagProps);
+            const isThereProp = foundProps.some(r => !r.startsWith('item.'))
+                || foundProps.length == 0;
 
             if (!(this.cmpInternalId in Components.componentPartsMap))
                 Components.componentPartsMap[this.cmpInternalId] = [];
@@ -999,7 +999,7 @@ export class BaseComponent extends BehaviorComponent {
              * Only parse and <st-element> individually in case it's not inside a container
              * with (forEach) notation
              * */
-            if (!isThereProp) {
+            if (isThereProp) {
                 Components.componentPartsMap[this.cmpInternalId].push(
                     new ComponentPart({
                         template: null, component: propMap['component'], props: propMap,
@@ -1018,7 +1018,7 @@ export class BaseComponent extends BehaviorComponent {
             const loopAttrs = (!isThereProp && propMap?.each != 'item')
                 ? ''
                 : ` componentRef="${propMap['component']}" loopDSource="${propMap?.each == 'item'}"
-                    props=${isThereProp ? JSON.stringify(tagProps) : '{}'}`;
+                    props=${Object.values(tagProps).length > 0 ? JSON.stringify(tagProps) : '{}'}`;
 
             return `<still-placeholder 
                         class="still-placeholder${uuid} ${addCls}" ${loopAttrs}

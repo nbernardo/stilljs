@@ -10,7 +10,7 @@ import { UUIDUtil } from "../util/UUIDUtil.js";
 export class Router {
 
     static routeMap;
-    static baseUrl = window.location.href.replace('#', '');
+    static baseUrl = window.location.origin.toString().concat('/');
 
     #data = {};
     static instance = null;
@@ -18,6 +18,7 @@ export class Router {
     static initRouting = false;
     static importedMap = {};
     static navigatingView = null;
+    static urlParams = {};
 
     /** @returns { Router } */
     static getInstance() {
@@ -34,11 +35,22 @@ export class Router {
         Router.initRouting = true;
     }
 
-    static data(cmpName) {
+    static data = (cmpName) => Router.getInstance().#data[cmpName];
 
-        const data = Router.getInstance().#data[cmpName];
-        //delete Router.getInstance().#data[cmpName];
-        return data;
+    /**
+     * 
+
+     * @param {String} data 
+     */
+    static aliasGoto(cmp, data, url = false) {
+
+        if (!url) Router.clearUrlPath();
+        if (data.startsWith($stillconst.RT_DT_PREFIX)) {
+            data = Router.getInstance().#data[data];
+            delete Router.getInstance().#data[data];
+        }
+
+        Router.goto(cmp, { data, url });
     }
 
     /**
@@ -46,22 +58,17 @@ export class Router {
 
      * @param {String} data 
      */
-    static aliasGoto(cmp, data) {
-
-        if (data.startsWith($stillconst.RT_DT_PREFIX)) {
-            data = Router.getInstance().#data[data];
-            delete Router.getInstance().#data[data];
-        }
-
-        Router.goto(cmp, { data });
+    static aliasGoto1(cmp, url = false) {
+        if (!url) Router.clearUrlPath();
+        Router.goto(cmp, { data: {}, url });
     }
 
     /**
      *
      * @param {*} cmp 
-     * @param {{data, path}} param1 
+     * @param {{data, path}} param1
      */
-    static goto(cmp, { data = {} } = { data: {} }) {
+    static goto(cmp, { data = {}, url = true } = { data: {}, url: true }) {
 
         cmp = Router.handleViewType(cmp);
         Router.initRouting = false;
@@ -149,7 +156,8 @@ export class Router {
                     if (!Router.importedMap[cmp]) {
                         if (cmp == 'init') return;
 
-                        if ('address' in cmp) cmp = cmp.address;
+                        if (cmp instanceof Object)
+                            if ('address' in cmp) cmp = cmp.address;
 
                         /** the bellow line clears previous component from memory
                          * @type { ViewComponent } */
@@ -189,9 +197,28 @@ export class Router {
                     Router.getAndDisplayPage($still.context.currentView, Router.importedMap[cmp]);
                 });
         }
+        if (url) Router.updateUrlPath(cmp);
 
     }
 
+    static updateUrlPath(cmp) {
+
+        let routeName = cmp;
+        if (cmp instanceof Object) routeName = cmp.address;
+
+        const newPath = Router.routeMap[routeName].url;
+        window.history.pushState(null, null, '#/');
+        window.history.pushState(null, null, '#' + newPath);
+    }
+
+    static clearUrlPath() {
+        window.history.pushState(null, null, '#/');
+    }
+
+    static replaceUrlPath(path) {
+        window.history.pushState(null, null, '#/');
+        window.history.pushState(null, null, '#' + path);
+    }
     /**
      * 1. Add new method for dynamic instantiation
      * 2. Add getter and setters for the components fields
@@ -327,7 +354,6 @@ export class Router {
 
     static handleViewType(cmp) {
 
-
         if (
             (cmp.prototype instanceof ViewComponent)
             || (cmp.prototype instanceof BaseComponent)
@@ -373,10 +399,12 @@ export class Router {
 
     static getUrlPath() {
 
-        let path = window.location.hash, address;
-        let cleanPath = path.replace('#', '');
-        let route = Router.routeMap[cleanPath];
+        let path = window.location.hash.replace('#', ''), address;
+        let urlAndParams = path.split('?');
+        const isThereParams = urlAndParams.length > 1;
+        if (isThereParams) path = urlAndParams[0];
 
+        let route = Router.routeMap[path];
         if (path.split('/').length > 2 || route?.isUrl) {
 
             route = route.path.split('/');
@@ -391,7 +419,33 @@ export class Router {
 
         }
 
+        if (isThereParams) {
+            Router.navigatingView = address;
+            Router.urlParams[address] = urlAndParams[1];
+        }
         return route ? { address, route, path } : { state: false, path };
+    }
+
+    static getUrlParams() {
+
+        let routeName = Router.navigatingView;
+        if (Router.navigatingView instanceof Object)
+            routeName = Router.navigatingView.address;
+
+        const params = Router.urlParams[routeName];
+        const result = params?.split('&')?.reduce((accum, param) => {
+            const [key, value] = param.split('=');
+            accum[key] = value;
+            return accum;
+        }, {});
+
+        setTimeout(() => {
+            Object.entries(Router.urlParams).forEach(([key, _]) => {
+                if (Router.navigatingView != key) delete Router.urlParams[key];
+            });
+        }, 1000);
+
+        return result;
 
     }
 
@@ -402,6 +456,10 @@ export class Router {
             window.location.assign('#');
 
         window.addEventListener('popstate', () => {
+
+            const url = location.href.toString().split("#");
+            if (url[0]?.endsWith('?'))
+                return Router.replaceUrlPath(url[1]);
 
             const route = Router.getUrlPath();
 
