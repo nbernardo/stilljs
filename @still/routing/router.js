@@ -10,7 +10,8 @@ import { UUIDUtil } from "../util/UUIDUtil.js";
 export class Router {
 
     static routeMap;
-    static baseUrl = window.location.origin.toString().concat('/');
+    static baseUrl = window.location.href.replace('#', '');
+    //static baseUrl = window.location.origin.toString().concat('/');
 
     #data = {};
     static instance = null;
