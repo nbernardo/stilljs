@@ -9,12 +9,12 @@ export class LoginComponent extends ViewComponent {
 
 	template = `
 		<form onsubmit="return false;">
-			<div>Type the same for both user and password for <br>success login, something else for invalid<div>
+			<h4>Type the same for both user and password for <br>success login, something else for invalid</h4>
 			
 			Username: <input type="text" (value)="userName">
 			<br><br>
 			Password: <input type="password" (value)="password"><br>
-			
+
 			<span id="loginStatus"></span><br>
 
 			<button (click)="processLogin()">Login</button>

@@ -49,6 +49,10 @@ export const stillRoutesMap = {
             LoginComponent: {
                 path: "app/components/dom-manipulation",
                 url: "/dom-manipulatio/login"
+            },
+            SlittedComponent: {
+                path: "app/components/base",
+                url: "/bas/slitted"
             }
         },
         lazyInitial: {}
