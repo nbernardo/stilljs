@@ -396,9 +396,18 @@ export class Components {
 
         if (cmp.isPublic) {
             Components.registerPublicCmp(cmp);
+
+            this.template = cmp.getBoundTemplate();
             setTimeout(() => cmp.parseOnChange(), 500);
-            this.template = this.getNewParsedComponent(cmp).getTemplate();
+            setTimeout(() => {
+                (new Components).parseGetsAndSets(cmp)
+            }, 10);
+
             this.renderOnViewFor('stillUiPlaceholder');
+            const cmpParts = Components.componentPartsMap[cmp.cmpInternalId];
+            setTimeout(() =>
+                Components.handleInPartsImpl(cmp, cmp.cmpInternalId, cmpParts)
+            );
             Components.handleMarkedToRemoveParts();
         } else {
             document.body.innerHTML = ($stillconst.MSG.PRIVATE_CMP);
@@ -537,12 +546,12 @@ export class Components {
     /** 
      * @param {ViewComponent} instance 
      */
-    parseGetsAndSets(instance = null) {
+    parseGetsAndSets(instance = null, allowfProp = false) {
         /** @type { ViewComponent } */
         const cmp = instance || this.component;
         const cmpName = this.componentName;
 
-        cmp.getProperties().forEach(field => {
+        cmp.getProperties(allowfProp).forEach(field => {
 
             const inspectField = cmp[field];
             if (inspectField?.onlyPropSignature || inspectField?.name == 'Prop') {
@@ -562,6 +571,7 @@ export class Components {
 
                     cmp.__defineSetter__(field, (val) => {
                         cmp[field];
+                        /** This is for handling (renderIf) */
                         const elmList = document.getElementsByClassName(inspectField.listenerFlag);
                         for (const elm of elmList) {
                             if (val) elm.classList.remove($stillconst.PART_HIDE_CSS);
@@ -911,13 +921,13 @@ export class Components {
      * @param {ViewComponent} cmp 
      * @returns {ViewComponent}
      */
-    getNewParsedComponent(cmp, cmpName = null) {
+    getNewParsedComponent(cmp, cmpName = null, allowProps = false) {
 
         this
             .setComponentAndName(cmp, cmpName || cmp.getName())
             .defineNewInstanceMethod()
             .parseOnChange()
-            .parseGetsAndSets()
+            .parseGetsAndSets(null, allowProps)
             .markParsed();
 
         return cmp;

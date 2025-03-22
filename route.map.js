@@ -37,6 +37,14 @@ export const stillRoutesMap = {
             UserGrid: {
                 path: "app/components/user",
                 url: "/user/user-grid"
+            },
+            EntryMenu: {
+                path: "app/components/routing",
+                url: "/routin/entry-menu"
+            },
+            UserRegistration: {
+                path: "app/components/routing",
+                url: "/admin/user-registration"
             }
         },
         lazyInitial: {}

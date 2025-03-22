@@ -170,8 +170,11 @@ export class Router {
 
                         if (newInstance.isPublic) {
                             Components.registerPublicCmp(newInstance);
-                            if (!AppTemplate.get().isAuthN())
+                            if (!AppTemplate.get().isAuthN()) {
+                                if (url) Router.updateUrlPath(cmp);
+                                //ComponentRegistror.add(cmp.cmpInternalId, cmp);
                                 return (new Components()).renderPublicComponent(newInstance);
+                            }
                         }
 
                         ComponentRegistror.add(cmp, newInstance);
@@ -458,7 +461,15 @@ export class Router {
 
         window.addEventListener('popstate', () => {
 
-            const url = location.href.toString().split("#");
+            let url = location.href.toString();
+            if (
+                url.slice(0, -3) == Router.baseUrl
+                || url.slice(0, -2) == Router.baseUrl) {
+                const homeComponent = (new StillAppSetup()).entryComponentName;
+                return Router.goto(homeComponent);
+            }
+
+            url = url.toString().split("#");
             if (url[0]?.endsWith('?'))
                 return Router.replaceUrlPath(url[1]);
 

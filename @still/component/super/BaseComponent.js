@@ -395,7 +395,7 @@ export class BaseComponent extends BehaviorComponent {
                 const methodName = mt.split('="')[1], otherParams = mt.split(",");
                 let data = otherParams[1]?.trim().replace(/\'/g, ''),
                     routeName = otherParams[0]?.split('\'')[1]?.trim(),
-                    urlFlag = otherParams[2]?.replace(')', '')
+                    urlFlag = otherParams[2]?.replace(')', '').trim();
 
                 if (methodName.indexOf('goto(\'') == 0) {
                     if (data) {
