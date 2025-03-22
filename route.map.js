@@ -1,8 +1,8 @@
 
-/**
- * Don't change the constante name as it'll impact on the component routing
- */
-
+        /**
+         * Don't change the constante name as it'll impact on the component routing
+         */
+        
 export const stillRoutesMap = {
     viewRoutes: {
         regular: {
@@ -45,6 +45,10 @@ export const stillRoutesMap = {
             UserRegistration: {
                 path: "app/components/routing",
                 url: "/admin/user-registration"
+            },
+            LoginComponent: {
+                path: "app/components/dom-manipulation",
+                url: "/dom-manipulatio/login"
             }
         },
         lazyInitial: {}
@@ -54,10 +58,9 @@ export const stillRoutesMap = {
 
 export function $stillGetRouteMap() {
 
-    return {
-        route: {
-            ...stillRoutesMap.viewRoutes.regular,
-            ...stillRoutesMap.viewRoutes.lazyInitial
-        },
-    }
+	return {		route: {
+			...stillRoutesMap.viewRoutes.regular,
+			...stillRoutesMap.viewRoutes.lazyInitial
+		},
+	}
 }
