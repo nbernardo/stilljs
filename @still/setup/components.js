@@ -848,13 +848,20 @@ export class Components {
     replaceBoundFieldStElement(obj, fields, rec, noFieldsMap) {
 
         if (noFieldsMap) {
-            for (const [f, v] of fields) {
-                if (f in obj)
-                    obj[f] = v.replace('item.', '').trim();
+            for (const [f, v] of Object.entries(rec)) {
+                if (f in obj) {
+                    if (typeof v == 'string')
+                        obj[f] = v?.replace('item.', '')?.trim();
+                    else
+                        obj[f] = v;
+                }
             }
         } else {
             for (const [f, v] of fields) {
-                obj[f] = rec[v.replace('item.', '').trim()];
+                if (typeof v == 'string')
+                    obj[f] = rec[v?.replace('item.', '')?.trim()];
+                else
+                    obj[f] = rec[v];
             }
         }
 

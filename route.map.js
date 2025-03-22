@@ -53,6 +53,14 @@ export const stillRoutesMap = {
             SlittedComponent: {
                 path: "app/components/base",
                 url: "/bas/slitted"
+            },
+            LoopingDirective: {
+                path: "app/components/data-ui",
+                url: "/data-u/looping-directive"
+            },
+            ShoppingItem: {
+                path: "app/components/data-ui",
+                url: "/data-u/shopping-item"
             }
         },
         lazyInitial: {}
