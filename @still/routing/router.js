@@ -20,6 +20,7 @@ export class Router {
     static importedMap = {};
     static navigatingView = null;
     static urlParams = {};
+    static clickEvetCntrId = null;
 
     /** @returns { Router } */
     static getInstance() {
@@ -43,7 +44,7 @@ export class Router {
 
      * @param {String} data 
      */
-    static aliasGoto(cmp, data, url = false) {
+    static aliasGoto(cmp, data, url = false, containerId = null) {
 
         if (!url) Router.clearUrlPath();
         if (data.startsWith($stillconst.RT_DT_PREFIX)) {
@@ -51,7 +52,7 @@ export class Router {
             delete Router.getInstance().#data[data];
         }
 
-        Router.goto(cmp, { data, url });
+        Router.goto(cmp, { data, url, evt: { containerId } });
     }
 
     /**
@@ -59,9 +60,9 @@ export class Router {
 
      * @param {String} data 
      */
-    static aliasGoto1(cmp, url = false) {
+    static aliasGoto1(cmp, url = false, containerId = null) {
         if (!url) Router.clearUrlPath();
-        Router.goto(cmp, { data: {}, url });
+        Router.goto(cmp, { data: {}, url, evt: { containerId } });
     }
 
     /**
@@ -69,11 +70,12 @@ export class Router {
      * @param {*} cmp 
      * @param {{data, path}} param1
      */
-    static goto(cmp, { data = {}, url = true } = { data: {}, url: true }) {
-
+    static goto(cmp, { data = {}, url = true, evt = {} } = { data: {}, url: true, evt: {} }) {
+        Router.clickEvetCntrId = null;
         cmp = Router.handleViewType(cmp);
         Router.initRouting = false;
         Components.setRemovingPartsVersionId($still.context.currentView?.versionId);
+        if (evt.containerId) Router.clickEvetCntrId = evt.containerId;
 
         /**
          * The or (||) conditions serves to mount the application so the user can 
@@ -129,7 +131,10 @@ export class Router {
                 (async () => {
 
                     const appTemplate = AppTemplate.get().template;
-                    $still.context.currentView = await (await Components.produceComponent({ cmp })).newInstance;
+                    const { newInstance } = await (
+                        await Components.produceComponent({ cmp, loneCntrId: Router.clickEvetCntrId })
+                    );
+                    still.context.currentView = newInstance;
 
                     if (!AppTemplate.get().isAuthN() && !$still.context.currentView.isPublic)
                         document.write($stillconst.MSG.PRIVATE_CMP);
@@ -162,7 +167,9 @@ export class Router {
 
                         /** the bellow line clears previous component from memory
                          * @type { ViewComponent } */
-                        const newInstance = await (await Components.produceComponent({ cmp })).newInstance;
+                        const { newInstance } = await (
+                            await Components.produceComponent({ cmp, loneCntrId: Router.clickEvetCntrId })
+                        );
 
                         AppTemplate.get().storageSet('stAppInitStatus', true);
                         if (newInstance.template == undefined)
@@ -241,12 +248,16 @@ export class Router {
     static getAndDisplayPage(cmp, isReRender = false, isHome = false) {
 
         const appCntrId = Router.appPlaceholder, isPrivate = !cmp.isPublic;
-        let appPlaceholder = document.getElementById(appCntrId), pageContent;
+        let appPlaceholder = document.getElementById(appCntrId), soleRouting;
+        if (Router.clickEvetCntrId) {
+            appPlaceholder = document.getElementById(Router.clickEvetCntrId);
+            soleRouting = true;
+        }
         const cmpId = cmp.getUUID(), cmpName = cmp.constructor.name;
 
         if (isReRender) {
             Components
-                .unloadLoadedComponent()
+                .unloadLoadedComponent(soleRouting && appPlaceholder)
                 .then(async () => {
                     Router.handleUnauthorizeIfPresent();
                     if (Router.noPermAccessProcess(isPrivate, appPlaceholder)) return;
@@ -271,7 +282,7 @@ export class Router {
 
         } else {
             Components
-                .unloadLoadedComponent()
+                .unloadLoadedComponent(soleRouting && appPlaceholder)
                 .then(async () => {
                     Router.handleUnauthorizeIfPresent();
                     if (Router.noPermAccessProcess(isPrivate, appPlaceholder)) return;
@@ -294,6 +305,7 @@ export class Router {
 
                 });
         }
+        if (cmp.lone) ComponentRegistror.add(cmp.getUUID(), cmp)
 
     }
 
@@ -500,7 +512,7 @@ export class Router {
         if (route.address) {
             cmpCls = await (
                 await Components.produceComponent(
-                    { cmp: route.address, urlRequest: true }
+                    { cmp: route.address, urlRequest: true, loneCntrId: Router.clickEvetCntrId }
                 )
             );
         }
