@@ -1,8 +1,8 @@
 import { ViewComponent } from "../../@still/component/super/ViewComponent.js";
 export class HomeWithEvent extends ViewComponent {
 
-	isPublic = true;
-	template = `
+    //isPublic = true;
+    template = `
         <div>
             <h2>Hello world from HomeWithEvent!</h2>
             <p>
@@ -12,12 +12,12 @@ export class HomeWithEvent extends ViewComponent {
         </div>
     `;
 
-	callMe() {
-		alert(`Hi, you clicked me, I'm a button`);
-	}
+    callMe() {
+        alert(`Hi, you clicked me, I'm a button`);
+    }
 
-	constructor() {
-		super();
-	}
+    constructor() {
+        super();
+    }
 
 }

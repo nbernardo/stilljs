@@ -1,6 +1,6 @@
 import { StillAppSetup } from "../../app-setup.js";
 import { stillRoutesMap } from "../../route.map.js";
-import { ComponentNotFoundException, ComponentRegistror } from "../component/manager/registror.js";
+import { $still, ComponentNotFoundException, ComponentRegistror } from "../component/manager/registror.js";
 import { BaseComponent } from "../component/super/BaseComponent.js";
 import { BehaviorComponent } from "../component/super/BehaviorComponent.js";
 import { ViewComponent } from "../component/super/ViewComponent.js";
@@ -22,7 +22,13 @@ const $stillLoadScript = (path, className, base = null) => {
 
 }
 
-const ProduceComponentType = { parentCmp: '', registerCls: false, urlRequest: false };
+const ProduceComponentType = {
+    parentCmp: '',
+    registerCls: false,
+    urlRequest: false,
+    lone: false,
+    loneCntrId: null
+};
 
 export const loadComponentFromPath = (path, className, callback = () => { }) => {
 
@@ -245,6 +251,8 @@ export class Components {
             const parent = parentCmp ? { parent: parentCmp } : '';
 
             newInstance = new cmpCls[clsName](parent);
+            newInstance.lone = !!params.loneCntrId || params.lone;
+            newInstance.loneCntrId = params.loneCntrId;
             newInstance.$parent = parentCmp;
 
             if (!newInstance.template) {
@@ -365,7 +373,7 @@ export class Components {
                     );
                 }
 
-                this.renderOnViewFor('stillUiPlaceholder');
+                if (!$still.context.currentView) this.renderOnViewFor('stillUiPlaceholder');
                 setTimeout(() => Components.handleInPlacePartsInit($still.context.currentView, 'fixed-part'));
                 //setTimeout(() => Components.handleInPlacePartsInit($still.context.currentView));
                 setTimeout(async () => {
@@ -546,7 +554,7 @@ export class Components {
     /** 
      * @param {ViewComponent} instance 
      */
-    parseGetsAndSets(instance = null, allowfProp = false) {
+    parseGetsAndSets(instance = null, allowfProp = false, loneContainer = null) {
         /** @type { ViewComponent } */
         const cmp = instance || this.component;
         const cmpName = this.componentName;
@@ -628,7 +636,7 @@ export class Components {
     /** @param { ViewComponent } cmp */
     propageteChanges(cmp, field) {
 
-        const cpName = cmp.dynLoopObject
+        const cpName = cmp.dynLoopObject || cmp.lone
             ? cmp.cmpInternalId
             : cmp.getProperInstanceName();
         const cssRef = `.listenChangeOn-${cpName}-${field}`;
@@ -941,8 +949,12 @@ export class Components {
 
     }
 
-    static unloadLoadedComponent() {
+    static unloadLoadedComponent(cntrPlaceholder = null) {
         return new Promise((resolve) => {
+
+            if (cntrPlaceholder) {
+                cntrPlaceholder.innerHTML = '';
+            }
 
             const { ANY_COMPONT_LOADED } = $stillconst;
             /**
@@ -973,7 +985,7 @@ export class Components {
 
         /** @type { ViewComponent } */
         let newInstance = await (
-            await Components.produceComponent({ cmp: cmpName })
+            await Components.produceComponent({ cmp: cmpName, loneCntrId: cmp.loneCntrId })
         ).newInstance;
         newInstance = (new Components()).getParsedComponent(newInstance);
         newInstance.setUUID(cmp.getUUID());
@@ -984,7 +996,9 @@ export class Components {
             elmRef = isUnAuthn ? $stillconst.ST_HOME_CMP : $stillconst.ST_HOME_CMP1;
         }
 
-        const container = document.querySelector(`.${elmRef}`);
+        const container = cmp.loneCntrId
+            ? document.getElementById(cmp.loneCntrId)
+            : document.querySelector(`.${elmRef}`);
         container.innerHTML = newInstance.getTemplate();
 
         container.style.display = 'contents';
@@ -1002,6 +1016,8 @@ export class Components {
         setTimeout(async () => newInstance.parseOnChange(), 200);
         //await newInstance.stAfterInit();
         await newInstance.onRender();
+        if (cmp.loneCntrId) ComponentRegistror.add(cmpName, newInstance);
+
         if (cmp.isPublic) this.registerPublicCmp(newInstance);
         else ComponentRegistror.add(cmpName, newInstance);
 
@@ -1101,6 +1117,8 @@ export class Components {
                     await Components.produceComponent({ cmp: component, parentCmp })
                 ).newInstance;
                 instance.dynCmpGeneratedId = `st_${UUIDUtil.numberId()}`;
+                /** In case the parent component is Lone component, then child component will also be */
+                instance.lone = parentCmp.lone;
                 instance.onRender();
                 instance.cmpInternalId = `dynamic-${instance.getUUID()}${component}`;
                 instance.stillElement = true;
@@ -1552,3 +1570,4 @@ export class Components {
     }
 
 }
+window.$still = $still;

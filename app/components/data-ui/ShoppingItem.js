@@ -17,6 +17,7 @@ export class ShoppingItem extends ViewComponent {
 			<span>Produce Name: @name</span>
 			<span>Quantity: @sold</span>
 			<span>Price: @price</span>
+			<button (click)="increment()">Increment Qtd to @sold</button>
 		</div>
 
 		<style>
@@ -33,5 +34,9 @@ export class ShoppingItem extends ViewComponent {
 			}
 		</style>
 	`;
+
+	increment() {
+		this.sold = this.sold.value + 1;
+	}
 
 }

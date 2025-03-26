@@ -1,4 +1,5 @@
 import { ViewComponent } from "../../../@still/component/super/ViewComponent.js";
+import { UserGrid } from "./UserGrid.js";
 
 export class UserForm extends ViewComponent {
 
@@ -8,6 +9,9 @@ export class UserForm extends ViewComponent {
 	childTitleState = 'Child Title from Parent';
 	changeCounter = 0;
 
+	/** @Proxy @type { UserGrid } */
+	myRefToGrid;
+
 	template = `
 		<button (click)="updateChildTitle()">Change child title</button>
 		<br/>
@@ -15,6 +19,7 @@ export class UserForm extends ViewComponent {
 		<st-element 
 			component="UserGrid"
 			ref="insideFormGridReference"
+			proxy="myRefToGrid"
 			tableTitle="self.childTitleState"
 			titleMergeSize="5"
 			>
@@ -27,7 +32,7 @@ export class UserForm extends ViewComponent {
 
 		/** @type { UserGrid } */
 		const userGridObj = Components.getFromRef('insideFormGridReference');
-		userGridObj.tableTitle = 'Title altered ' + this.changeCounter.value + 'x';
+		this.myRefToGrid.tableTitle = 'Title altered ' + this.changeCounter.value + 'x';
 	}
 
 	constructor() {

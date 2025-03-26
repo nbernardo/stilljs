@@ -2,7 +2,7 @@ import { ViewComponent } from "../../../@still/component/super/ViewComponent.js"
 
 export class BasicConditionalView extends ViewComponent {
 
-	isPublic = true;
+	//isPublic = true;
 
 	/** @Prop */
 	isAdminPermisison = false;
@@ -13,6 +13,11 @@ export class BasicConditionalView extends ViewComponent {
 	addLabel = 'Hide';
 	adminLabel = 'Unable';
 
+	textContent = `
+		If you click the button bellow this content will be hidden
+		<br>in case flag is true, and hide if false
+	`
+
 	template = `
         <div>
             <div (renderIf)="self.isAdminPermisison">
@@ -22,8 +27,7 @@ export class BasicConditionalView extends ViewComponent {
 			</div>
 
             <p (showIf)="self.shouldShowContent">
-            If you click the button bellow this content will be hidden
-			<br>in case flag is true, and hide if false
+            @textContent
             </p>
             <button (click)="hideOrUnhide()">@addLabel content</button>
             <button (click)="renderContent()">@adminLabel Admin</button>

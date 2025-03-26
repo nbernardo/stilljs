@@ -124,5 +124,5 @@ export const $still = {
 
 }
 
-window.$still = $still;
+//window.$still = $still;
 window.ComponentRegistror = ComponentRegistror;
