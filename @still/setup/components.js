@@ -373,7 +373,8 @@ export class Components {
                     );
                 }
 
-                if (!$still.context.currentView) this.renderOnViewFor('stillUiPlaceholder');
+                if (!$still.context.currentView.lone && !Router.clickEvetCntrId)
+                    this.renderOnViewFor('stillUiPlaceholder');
                 setTimeout(() => Components.handleInPlacePartsInit($still.context.currentView, 'fixed-part'));
                 //setTimeout(() => Components.handleInPlacePartsInit($still.context.currentView));
                 setTimeout(async () => {
@@ -996,9 +997,16 @@ export class Components {
             elmRef = isUnAuthn ? $stillconst.ST_HOME_CMP : $stillconst.ST_HOME_CMP1;
         }
 
-        const container = cmp.loneCntrId
+        let container = cmp.loneCntrId
             ? document.getElementById(cmp.loneCntrId)
             : document.querySelector(`.${elmRef}`);
+
+        if (!container) {
+            container = document.querySelector(`.cmp-name-page-view-${cmpName}`);
+            container.innerHTML = '';
+            ComponentRegistror.add(cmp.getUUID(), cmp)
+        }
+
         container.innerHTML = newInstance.getTemplate();
 
         container.style.display = 'contents';

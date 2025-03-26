@@ -263,7 +263,7 @@ export class Router {
                     if (Router.noPermAccessProcess(isPrivate, appPlaceholder)) return;
                     if (cmp.subImported) {
                         const pageContent = `
-                        <output id="${cmpId}-check" style="display:contents;">
+                        <output id="${cmpId}-check" class="cmp-name-page-view-${cmpName}" style="display:contents;">
                             ${cmp.getTemplate()}
                         </output>`;
                         appPlaceholder.insertAdjacentHTML('afterbegin', pageContent);
@@ -291,7 +291,7 @@ export class Router {
                     }
 
                     const pageContent = `
-                        <output id="${cmpId}-check" style="display:contents;">
+                        <output id="${cmpId}-check" class="cmp-name-page-view-${cmpName}" style="display:contents;">
                             ${cmp.getTemplate()}
                         </output>`;
 
@@ -303,9 +303,9 @@ export class Router {
                     setTimeout(() => Router.callCmpAfterInit(`${cmpId}-check`));
                     Router.importedMap[cmpName] = true;
 
+                    ComponentRegistror.add(cmp.getUUID(), cmp);
                 });
         }
-        if (cmp.lone) ComponentRegistror.add(cmp.getUUID(), cmp)
 
     }
 
