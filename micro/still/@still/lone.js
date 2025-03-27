@@ -13,6 +13,7 @@ import { UUIDUtil } from "./util/UUIDUtil.js";
     Router.parseRouteMap()
         .then(async () => {
 
+            Router.setStillHomeUrl();
             StillAppSetup.loadInterceptWorker();
 
             StillAppSetup.register(Router);

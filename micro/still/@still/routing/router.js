@@ -607,4 +607,8 @@ export class Router {
 
     }
 
+    static setStillHomeUrl() {
+        Router.baseUrl = `${location.origin}/${STILL_HOME}`;
+    }
+
 }
