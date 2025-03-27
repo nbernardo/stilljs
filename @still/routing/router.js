@@ -1,11 +1,19 @@
 import { StillAppSetup } from "../../app-setup.js";
 import { AppTemplate } from "../../app-template.js";
 import { $stillGetRouteMap, stillRoutesMap } from "../../route.map.js";
-import { ComponentRegistror } from "../component/manager/registror.js";
+import { $still, ComponentRegistror } from "../component/manager/registror.js";
 import { BaseComponent } from "../component/super/BaseComponent.js";
 import { Components, loadComponentFromPath } from "../setup/components.js";
 import { $stillconst, ST_UNAUTHOR_ID } from "../setup/constants.js";
 import { UUIDUtil } from "../util/UUIDUtil.js";
+
+const GotoParams = {
+    data: {},
+    url: true,
+    evt: {
+        containerId: null
+    }
+}
 
 export class Router {
 
@@ -21,9 +29,14 @@ export class Router {
     static navigatingView = null;
     static navigatingUrl = null;
     static urlParams = {};
+    /** 
+     * clickEvetCntrId only takes place when it comes to lone component so that
+     *  it can identify the context which an event (e.g. Navigation) occurred
+     * */
     static clickEvetCntrId = null;
     static preView = null;
     static navCounter = 0;
+    static serviceId = null;
 
     /** @returns { Router } */
     static getInstance() {
@@ -84,7 +97,9 @@ export class Router {
      * @param {*} cmp 
      * @param {{data, path}} param1
      */
-    static goto(cmp, { data = {}, url = true, evt = {} } = { data: {}, url: true, evt: {} }) {
+    static goto(cmp, params = GotoParams) {
+
+        const { data, evt, url } = params;
 
         cmp = Router.initNavigation(cmp);
         if (evt.containerId) Router.clickEvetCntrId = evt.containerId;
@@ -126,7 +141,8 @@ export class Router {
 
         const cmpRegistror = $still.context.componentRegistror.componentList;
         const isHomeCmp = StillAppSetup.get().entryComponentName == cmp;
-        if (isHomeCmp) {
+        const isLoneCmp = Router.clickEvetCntrId != null && Router.clickEvetCntrId != 'null';
+        if (isHomeCmp && isLoneCmp) {
 
             if (cmp in cmpRegistror) {
 
@@ -145,7 +161,7 @@ export class Router {
                     const { newInstance } = await (
                         await Components.produceComponent({ cmp, loneCntrId: Router.clickEvetCntrId })
                     );
-                    still.context.currentView = newInstance;
+                    $still.context.currentView = newInstance;
 
                     if (!AppTemplate.get().isAuthN() && !$still.context.currentView.isPublic)
                         document.write($stillconst.MSG.PRIVATE_CMP);
@@ -201,7 +217,7 @@ export class Router {
                             return document.write($stillconst.MSG.PRIVATE_CMP);
 
                         newInstance.isRoutable = true;
-                        if (!wasPrevLoaded) Router.parseComponent(newInstance);
+                        if (!wasPrevLoaded && !newInstance.lone) Router.parseComponent(newInstance);
                         newInstance.setRoutableCmp(true);
                         if (isHomeCmp)
                             newInstance.setUUID($stillconst.TOP_LEVEL_CMP);
@@ -268,13 +284,14 @@ export class Router {
 
         const appCntrId = Router.appPlaceholder, isPrivate = !cmp.isPublic;
         let appPlaceholder = document.getElementById(appCntrId), soleRouting;
-        if (Router.clickEvetCntrId) {
+        const isLoneCmp = Router.clickEvetCntrId != null && Router.clickEvetCntrId != 'null';
+
+        if (isLoneCmp) {
             appPlaceholder = document.getElementById(Router.clickEvetCntrId);
             soleRouting = true;
         }
         const cmpId = cmp.getUUID(), cmpName = cmp.constructor.name;
-
-        if (isReRender) {
+        if (isReRender || isLoneCmp) {
             Components
                 .unloadLoadedComponent(soleRouting && appPlaceholder)
                 .then(async () => {

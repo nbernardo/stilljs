@@ -93,16 +93,27 @@ export class Components {
         return `${TOP_LEVEL_CMP}`;
     }
 
-    renderOnViewFor(placeHolder) {
+    renderOnViewFor(placeHolder, cmp = null) {
+
+        const isLoneCmp = Router.clickEvetCntrId;
+
         if (this.template instanceof Array)
             this.template = this.template.join('');
 
         let cntr = document.getElementById(placeHolder);
-        if (document.getElementById($stillconst.APP_PLACEHOLDER)) {
-            cntr = document.getElementById($stillconst.APP_PLACEHOLDER);
+        if (isLoneCmp) {
+            cntr = document.getElementById(isLoneCmp);
+        } else {
+            if (document.getElementById($stillconst.APP_PLACEHOLDER))
+                cntr = document.getElementById($stillconst.APP_PLACEHOLDER);
         }
 
         cntr.innerHTML = this.template;
+
+        if (isLoneCmp) setTimeout(() => {
+            Components.emitAction(cmp.getName());
+        }, 200);
+
         Components.handleMarkedToRemoveParts();
     }
 
@@ -187,7 +198,7 @@ export class Components {
             newInstance = new cmpCls[clsName](parent);
             Components.prevLoadingTracking.add(clsName);
             newInstance.lone = !!params.loneCntrId || params.lone;
-            newInstance.loneCntrId = params.loneCntrId;
+            newInstance.loneCntrId = params.loneCntrId || Router.clickEvetCntrId;
             newInstance.$parent = parentCmp;
 
             if (!newInstance.template) {
@@ -308,7 +319,7 @@ export class Components {
                 }
 
                 if (!$still.context.currentView.lone && !Router.clickEvetCntrId)
-                    this.renderOnViewFor('stillUiPlaceholder');
+                    this.renderOnViewFor('stillUiPlaceholder', $still.context.currentView);
                 setTimeout(() => Components.handleInPlacePartsInit($still.context.currentView, 'fixed-part'));
                 //setTimeout(() => Components.handleInPlacePartsInit($still.context.currentView));
                 setTimeout(async () => {
@@ -348,8 +359,9 @@ export class Components {
 
             this.renderOnViewFor('stillUiPlaceholder');
             const cmpParts = Components.componentPartsMap[cmp.cmpInternalId];
-            setTimeout(() =>
+            setTimeout(() => {
                 Components.handleInPartsImpl(cmp, cmp.cmpInternalId, cmpParts)
+            }
             );
             Components.handleMarkedToRemoveParts();
         } else {
@@ -928,14 +940,17 @@ export class Components {
             ? document.getElementById(cmp.loneCntrId)
             : document.querySelector(`.${elmRef}`);
         const previousContainer = container;
-        if (!container) {
+        if (!previousContainer) {
             //Components.markPrevContarOrphan(`cmp-name-page-view-${cmpName}`);
-            container = document.querySelector(`.cmp-name-page-view-${cmpName}`);
+            container = Components.getCmpViewContainer(cmpName, newInstance.cmpInternalId);
             container.innerHTML = '';
             ComponentRegistror.add(newInstance.cmpInternalId, newInstance);
         }
 
         container.innerHTML = newInstance.getTemplate();
+        if (newInstance?.lone) setTimeout(() => {
+            Components.emitAction(newInstance.getName(), newInstance.cmpInternalId);
+        }, 200);
 
         if (!previousContainer) {
             const cmpParts = Components.componentPartsMap[newInstance.cmpInternalId];
@@ -957,11 +972,33 @@ export class Components {
         setTimeout(async () => newInstance.parseOnChange(), 200);
         //await newInstance.stAfterInit();
         await newInstance.onRender();
-        if (cmp.loneCntrId) ComponentRegistror.add(cmpName, newInstance);
+        if (cmp.loneCntrId) {
+            ComponentRegistror.add(newInstance.cmpInternalId, newInstance);
+            //ComponentRegistror.add(cmpName, newInstance);
+        }
 
         if (cmp.isPublic) this.registerPublicCmp(newInstance);
         else ComponentRegistror.add(cmpName, newInstance);
 
+    }
+
+    static getCmpViewContainer(cmpName, cmpId) {
+
+        let cntr = document.querySelector(`.cmp-name-page-view-${cmpName}`);
+        if (!cntr) {
+
+            cntr = document.createElement('output');
+            cntr.style.display = 'contents';
+            cntr.id = `${cmpId}-check`;
+            cntr.className = `cmp-name-page-view-${cmpName}`;
+
+            let appContr = document.getElementById($stillconst.APP_PLACEHOLDER);
+            if (!appContr) appContr = document.getElementById($stillconst.UI_PLACEHOLDER);
+            appContr.insertAdjacentHTML('afterbegin', cntr);
+
+        }
+
+        return cntr;
     }
 
     static unloadApp() {
@@ -1003,8 +1040,32 @@ export class Components {
             //ComponentRegistror.add(cmpInternalId, instance);
             const parentCmp = $still.context.componentRegistror.componentList[parentId]
             //let cmpParts = Components.componentPartsMap[cmpInternalId];
-            Components.handleInPartsImpl(parentCmp?.instance, parentId, cmpParts);
+            if (parentCmp?.instance?.lone) {
+
+                Components.subscribeAction(
+                    parentCmp.instance.getName(),
+                    (placeHolderId) => {
+                        Components.handleInPartsImpl(
+                            parentCmp?.instance, parentId, cmpParts, placeHolderId
+                        );
+                    }
+                );
+
+            } else
+                Components.handleInPartsImpl(parentCmp?.instance, parentId, cmpParts);
         }
+
+    }
+
+    static getPartPlaceHolder(parentCmp, cmpInternalId, placeHolderRef) {
+
+        if (placeHolderRef) {
+            return document.getElementsByClassName(`still-placeholder${placeHolderRef}`);
+        }
+
+        return cmpInternalId == 'fixed-part'
+            ? document.getElementById(`stillUiPlaceholder`).getElementsByTagName('still-placeholder')
+            : document.getElementsByClassName(`still-placeholder${parentCmp?.getUUID()}`)
 
     }
 
@@ -1015,19 +1076,20 @@ export class Components {
      * @param {*} cmpParts 
      * @returns 
      */
-    static handleInPartsImpl(parentCmp, cmpInternalId, cmpParts) {
+    static handleInPartsImpl(parentCmp, cmpInternalId, cmpParts, placeHolderRef = null) {
 
-        if (!cmpParts) return;
+        if (!cmpParts || !parentCmp) return;
 
-        const placeHolders = cmpInternalId == 'fixed-part'
-            ? document.getElementById(`stillUiPlaceholder`).getElementsByTagName('still-placeholder')
-            : document.getElementsByClassName(`still-placeholder${parentCmp.getUUID()}`);
+        const placeHolders = Components
+            .getPartPlaceHolder(parentCmp, cmpInternalId, placeHolderRef);
 
         /**
          * Get all <st-element> component to replace with the
          * actual component template
          */
-        if (cmpInternalId != 'fixed-part') parentCmp.versionId = UUIDUtil.newId();
+        if (cmpInternalId != 'fixed-part') {
+            if (parentCmp) parentCmp.versionId = UUIDUtil.newId();
+        }
 
         const cmpVersionId = cmpInternalId == 'fixed-part' ? null : parentCmp.versionId;
         for (let idx = 0; idx < cmpParts.length; idx++) {
@@ -1134,7 +1196,7 @@ export class Components {
                  * replaces the actual template in the <st-element> component placeholder
                  */
                 placeHolders[idx]
-                    .insertAdjacentHTML('afterbegin', cmp.getBoundTemplate());
+                    ?.insertAdjacentHTML('afterbegin', cmp.getBoundTemplate());
                 setTimeout(async () => {
                     /**
                      * Runs the load method which is supposed to implement what should be run
@@ -1196,8 +1258,8 @@ export class Components {
 
     static removeOldParts() {
 
-        delete $still.context.componentRegistror.componentList[Router.preView.cmpInternalId];
-        delete $still.context.componentRegistror.componentList[Router.preView.constructor.name];
+        delete $still.context.componentRegistror.componentList[Router.preView?.cmpInternalId];
+        delete $still.context.componentRegistror.componentList[Router.preView?.constructor?.name];
 
         const versionId = Components.removeVersionId;
         const cmpList = $still.context.componentRegistror.componentList;
@@ -1327,13 +1389,13 @@ export class Components {
 
     }
 
-    static emitAction(actonName) {
+    static emitAction(actonName, value = null) {
         if (!(actonName in Components.subscriptions)) {
             Components.subscriptions[actonName] = { status: $stillconst.A_STATUS.DONE };
         }
 
         if (actonName in Components.subscriptions) {
-            Components.subscriptions[actonName].actions?.forEach(async action => await action());
+            Components.subscriptions[actonName].actions?.forEach(async action => await action(value));
             Components.subscriptions[actonName].status = $stillconst.A_STATUS.DONE;
         }
     }

@@ -429,6 +429,7 @@ export class BaseComponent extends BehaviorComponent {
                 }
                 if (isEvtParam) {
                     Router.clickEvetCntrId = containerId;
+                    Router.serviceId = containerId;
                     return mt.replace('(click)="', 'onclick="' + cmd + '.').replace('$event', 'event');
                 }
 
