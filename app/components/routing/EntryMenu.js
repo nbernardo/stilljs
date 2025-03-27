@@ -5,6 +5,10 @@ export class EntryMenu extends ViewComponent {
 	isPublic = true;
 
 	myVar1 = '';
+	personList = [
+		{ name: 'Naka', skill: 'Math' },
+		{ name: 'Maria', skill: 'Dev' },
+	]
 
 	template = `
 		<div>
@@ -23,6 +27,16 @@ export class EntryMenu extends ViewComponent {
 			</form>
 
 			<div>My State variable is: @myVar1</div>
+
+			<br>
+			<span (forEach)="personList">
+				<div each="item">
+					<span>Nome:</span> {item.name} - 
+					<span>Skill:</span> {item.skill}
+				</div>
+			</span>
+
+			<st-element component="LoopingDirective"></st-element>
 
 		</div>
 	`;

@@ -1,4 +1,5 @@
 import { ViewComponent } from "../../../@still/component/super/ViewComponent.js";
+import { Router } from "../../../@still/routing/router.js";
 
 export class UserRegistration extends ViewComponent {
 
@@ -10,6 +11,7 @@ export class UserRegistration extends ViewComponent {
 			This is the user registration component
 			<br/>
 			<button (click)="goto('EntryMenu')">Go to Menu</button>
+			<button (click)="takeMe($event)">Take me cond</button>
 		</div>
 
 		<style>
@@ -20,6 +22,10 @@ export class UserRegistration extends ViewComponent {
 			}
 		</style>
 	`;
+
+	takeMe(e) {
+		Router.goto('BasicConditionalView', { evt: { containerId: Router.serviceId } });
+	}
 
 	constructor() {
 		super();

@@ -60,7 +60,10 @@ export const $stillconst = {
     importedCmpMap: {},
     /** Routing Data Prefix */
     RT_DT_PREFIX: `$@data$`,
-    ST_FIXE_CLS: 'st-fixed-part'
+    ST_FIXE_CLS: 'st-fixed-part',
+    EVT: {
+        LONE_LOADED: 'LONE_LOADED'
+    }
 }
 
 export const ST_RE = {

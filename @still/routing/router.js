@@ -7,6 +7,14 @@ import { Components, loadComponentFromPath } from "../setup/components.js";
 import { $stillconst, ST_UNAUTHOR_ID } from "../setup/constants.js";
 import { UUIDUtil } from "../util/UUIDUtil.js";
 
+const GotoParams = {
+    data: {},
+    url: true,
+    evt: {
+        containerId: null
+    }
+}
+
 export class Router {
 
     static routeMap;
@@ -19,8 +27,16 @@ export class Router {
     static initRouting = false;
     static importedMap = {};
     static navigatingView = null;
+    static navigatingUrl = null;
     static urlParams = {};
+    /** 
+     * clickEvetCntrId only takes place when it comes to lone component so that
+     *  it can identify the context which an event (e.g. Navigation) occurred
+     * */
     static clickEvetCntrId = null;
+    static preView = null;
+    static navCounter = 0;
+    static serviceId = null;
 
     /** @returns { Router } */
     static getInstance() {
@@ -65,18 +81,28 @@ export class Router {
         Router.goto(cmp, { data: {}, url, evt: { containerId } });
     }
 
+    static initNavigation(cmp) {
+
+        Router.clickEvetCntrId = null;
+        Router.initRouting = false;
+        Router.preView = $still.context.currentView;
+        Components.setRemovingPartsVersionId($still.context.currentView?.versionId);
+        Router.navCounter = Router.navCounter + 1;
+
+        return Router.handleViewType(cmp);
+    }
+
     /**
      *
      * @param {*} cmp 
      * @param {{data, path}} param1
      */
-    static goto(cmp, { data = {}, url = true, evt = {} } = { data: {}, url: true, evt: {} }) {
-        Router.clickEvetCntrId = null;
-        cmp = Router.handleViewType(cmp);
-        Router.initRouting = false;
-        Components.setRemovingPartsVersionId($still.context.currentView?.versionId);
-        if (evt.containerId) Router.clickEvetCntrId = evt.containerId;
+    static goto(cmp, params = GotoParams) {
 
+        const { data, evt, url } = params;
+
+        cmp = Router.initNavigation(cmp);
+        if (evt.containerId) Router.clickEvetCntrId = evt.containerId;
         /**
          * The or (||) conditions serves to mount the application so the user can 
          * be redirected straight to a specific page/page-component instead of being 
@@ -115,7 +141,7 @@ export class Router {
 
         const cmpRegistror = $still.context.componentRegistror.componentList;
         const isHomeCmp = StillAppSetup.get().entryComponentName == cmp;
-        if (isHomeCmp) {
+        if (isHomeCmp && !Router.clickEvetCntrId /** Means lone component */) {
 
             if (cmp in cmpRegistror) {
 
@@ -165,6 +191,7 @@ export class Router {
                         if (cmp instanceof Object)
                             if ('address' in cmp) cmp = cmp.address;
 
+                        const wasPrevLoaded = Components.prevLoadingTracking.has(cmp);
                         /** the bellow line clears previous component from memory
                          * @type { ViewComponent } */
                         const { newInstance } = await (
@@ -176,7 +203,7 @@ export class Router {
                             return Router.cmpTemplateNotDefinedCheck(cmp);
 
                         if (newInstance.isPublic) {
-                            Components.registerPublicCmp(newInstance);
+                            //Components.registerPublicCmp(newInstance);
                             if (!AppTemplate.get().isAuthN()) {
                                 if (url) Router.updateUrlPath(cmp);
                                 //ComponentRegistror.add(cmp.cmpInternalId, cmp);
@@ -189,7 +216,7 @@ export class Router {
                             return document.write($stillconst.MSG.PRIVATE_CMP);
 
                         newInstance.isRoutable = true;
-                        Router.parseComponent(newInstance);
+                        if (!wasPrevLoaded && !newInstance.lone) Router.parseComponent(newInstance);
                         newInstance.setRoutableCmp(true);
                         if (isHomeCmp)
                             newInstance.setUUID($stillconst.TOP_LEVEL_CMP);
@@ -197,7 +224,13 @@ export class Router {
                         $still.context.currentView = newInstance;
 
                     } else {
-                        $still.context.currentView = cmpRegistror[cmp].instance;
+                        $still.context.currentView = cmpRegistror[cmp]?.instance
+                        if (!$still.context.currentView) {
+                            $still.context.currentView = await (
+                                await Components.produceComponent({ cmp })
+                            ).newInstance
+                        }
+
                         $still.context.currentView.isRoutable = true;
                         if (!$still.context.currentView.stillParsedState) {
                             $still.context.currentView = (new Components).getNewParsedComponent(
@@ -229,6 +262,7 @@ export class Router {
     static replaceUrlPath(path) {
         window.history.pushState(null, null, '#/');
         window.history.pushState(null, null, '#' + path);
+        Router.navigatingUrl = path;
     }
     /**
      * 1. Add new method for dynamic instantiation
@@ -254,8 +288,8 @@ export class Router {
             soleRouting = true;
         }
         const cmpId = cmp.getUUID(), cmpName = cmp.constructor.name;
-
-        if (isReRender) {
+        const isLoneCmp = Router.clickEvetCntrId;
+        if (isReRender || isLoneCmp) {
             Components
                 .unloadLoadedComponent(soleRouting && appPlaceholder)
                 .then(async () => {
@@ -345,6 +379,7 @@ export class Router {
                         || AppTemplate.get().storageGet('stAppInitStatus'))
                     && !Router.initRouting
                 ) {
+                    console.log(`CALLED ON 3`);
                     Components.handleInPlaceParts(cmp);
                 } else if (
                     (
@@ -352,6 +387,7 @@ export class Router {
                         && StillAppSetup.get().entryComponentName != cmp?.getName()
                     ) || appPlaceholder != null
                 ) {
+                    console.log(`CALLED ON 4`);
                     Components.handleInPlaceParts(cmp);
                 } else {
                     Components.stAppInitStatus = false;
@@ -482,6 +518,7 @@ export class Router {
             }
 
             url = url.toString().split("#");
+            if (url == Router.navigatingUrl) return false;
             if (url[0]?.endsWith('?'))
                 return Router.replaceUrlPath(url[1]);
 

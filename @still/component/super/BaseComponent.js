@@ -99,6 +99,8 @@ export class BaseComponent extends BehaviorComponent {
     dynLoopObject = false;
     lone = false;
     loneCntrId = null;
+    setAndGetsParsed = false;
+    navigationId = Router.navCounter;
 
 
     /**
@@ -161,7 +163,8 @@ export class BaseComponent extends BehaviorComponent {
             'dynCmpGeneratedId', 'stillElement', 'proxyName',
             'parentVersionId', 'versionId', 'behaviorEvtSubscriptions',
             'wasAnnotParsed', 'stateChangeSubsribers', 'bindStatus',
-            'templateUrl', '$parent', 'dynLoopObject', 'lone', 'loneCntrId'
+            'templateUrl', '$parent', 'dynLoopObject', 'lone', 'loneCntrId',
+            'setAndGetsParsed', 'navigationId'
         ];
         return fields.filter(
             field => {
@@ -220,13 +223,14 @@ export class BaseComponent extends BehaviorComponent {
         let path;
         const dynamic = $stillconst.DYNAMIC_CMP_PREFIX;
 
+
         if (this.stillElement || !this.isPublic || this.lone) {
             if (!this.cmpInternalId) this.cmpInternalId = this.getUUID();
             path = `$still.context.componentRegistror.getComponent('${this.cmpInternalId}')`;
         }
 
         else if (this.isPublic) {
-            path = `Public_${this.constructor.name}`;
+            path = `$still.context.componentRegistror.getComponent('${this.cmpInternalId}')`;
         }
 
         else {
@@ -260,12 +264,12 @@ export class BaseComponent extends BehaviorComponent {
         return this.$stillIsThereForm;
     }
 
-    getBoundState() {
+    getBoundState(isReloading = false) {
 
         const allowfProp = true;
         const fields = this.getProperties(allowfProp);
         const currentClass = this;
-        const clsName = this.dynLoopObject || this.lone
+        const clsName = this.dynLoopObject || this.lone || isReloading
             ? this.cmpInternalId
             : currentClass.constructor.name;
 
@@ -356,7 +360,7 @@ export class BaseComponent extends BehaviorComponent {
             let subscriptionCls = '';
 
             const subsCls = `listenChangeOn-${cmpName}-${ds}`;
-            const hashValue = `hash_${UUIDUtil.newId()}`;
+            const hashValue = `hash_${this.getUUID()}`;
             const hash = `hash="${hashValue}"`;
             const newClassName = `newCls="${subsCls}"`;
             const finalAttrs = `${newClassName} ${hash} class="${subsCls}`;
@@ -425,6 +429,7 @@ export class BaseComponent extends BehaviorComponent {
                 }
                 if (isEvtParam) {
                     Router.clickEvetCntrId = containerId;
+                    Router.serviceId = containerId;
                     return mt.replace('(click)="', 'onclick="' + cmd + '.').replace('$event', 'event');
                 }
 
@@ -723,7 +728,7 @@ export class BaseComponent extends BehaviorComponent {
     /**
      * Parse the template, inject the components 'props' and 'state' if defined in the component
      */
-    getBoundTemplate(containerId = null) {
+    getBoundTemplate(containerId = null, isReloading = false) {
 
         console.time('tamplateBindFor' + this.getName());
 
@@ -734,7 +739,7 @@ export class BaseComponent extends BehaviorComponent {
          * Bind the component state and return it (template)
          * NOTE: Needs to be always the first to be called
          */
-        let template = this.getBoundState();
+        let template = this.getBoundState(isReloading);
         template = this.getBoundRender(template);
 
         /** Parse still tags */

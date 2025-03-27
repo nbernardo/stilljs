@@ -2,7 +2,7 @@ import { ViewComponent } from "../../../@still/component/super/ViewComponent.js"
 
 export class BasicConditionalView extends ViewComponent {
 
-	//isPublic = true;
+	isPublic = true;
 
 	/** @Prop */
 	isAdminPermisison = false;
@@ -31,6 +31,7 @@ export class BasicConditionalView extends ViewComponent {
             </p>
             <button (click)="hideOrUnhide()">@addLabel content</button>
             <button (click)="renderContent()">@adminLabel Admin</button>
+            <button (click)="goto('EntryMenu')">@adminLabel for Menu</button>
         </div>
     `;
 
