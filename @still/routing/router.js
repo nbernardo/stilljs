@@ -1,7 +1,7 @@
 import { StillAppSetup } from "../../app-setup.js";
 import { AppTemplate } from "../../app-template.js";
 import { $stillGetRouteMap, stillRoutesMap } from "../../route.map.js";
-import { ComponentRegistror } from "../component/manager/registror.js";
+import { $still, ComponentRegistror } from "../component/manager/registror.js";
 import { BaseComponent } from "../component/super/BaseComponent.js";
 import { Components, loadComponentFromPath } from "../setup/components.js";
 import { $stillconst, ST_UNAUTHOR_ID } from "../setup/constants.js";
@@ -141,7 +141,8 @@ export class Router {
 
         const cmpRegistror = $still.context.componentRegistror.componentList;
         const isHomeCmp = StillAppSetup.get().entryComponentName == cmp;
-        if (isHomeCmp && !Router.clickEvetCntrId /** Means lone component */) {
+        const isLoneCmp = Router.clickEvetCntrId != null && Router.clickEvetCntrId != 'null';
+        if (isHomeCmp && isLoneCmp) {
 
             if (cmp in cmpRegistror) {
 
@@ -160,7 +161,7 @@ export class Router {
                     const { newInstance } = await (
                         await Components.produceComponent({ cmp, loneCntrId: Router.clickEvetCntrId })
                     );
-                    still.context.currentView = newInstance;
+                    $still.context.currentView = newInstance;
 
                     if (!AppTemplate.get().isAuthN() && !$still.context.currentView.isPublic)
                         document.write($stillconst.MSG.PRIVATE_CMP);
@@ -283,12 +284,13 @@ export class Router {
 
         const appCntrId = Router.appPlaceholder, isPrivate = !cmp.isPublic;
         let appPlaceholder = document.getElementById(appCntrId), soleRouting;
-        if (Router.clickEvetCntrId) {
+        const isLoneCmp = Router.clickEvetCntrId != null && Router.clickEvetCntrId != 'null';
+
+        if (isLoneCmp) {
             appPlaceholder = document.getElementById(Router.clickEvetCntrId);
             soleRouting = true;
         }
         const cmpId = cmp.getUUID(), cmpName = cmp.constructor.name;
-        const isLoneCmp = Router.clickEvetCntrId;
         if (isReRender || isLoneCmp) {
             Components
                 .unloadLoadedComponent(soleRouting && appPlaceholder)
@@ -379,7 +381,6 @@ export class Router {
                         || AppTemplate.get().storageGet('stAppInitStatus'))
                     && !Router.initRouting
                 ) {
-                    console.log(`CALLED ON 3`);
                     Components.handleInPlaceParts(cmp);
                 } else if (
                     (
@@ -387,7 +388,6 @@ export class Router {
                         && StillAppSetup.get().entryComponentName != cmp?.getName()
                     ) || appPlaceholder != null
                 ) {
-                    console.log(`CALLED ON 4`);
                     Components.handleInPlaceParts(cmp);
                 } else {
                     Components.stAppInitStatus = false;

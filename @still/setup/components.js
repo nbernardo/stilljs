@@ -360,7 +360,6 @@ export class Components {
             this.renderOnViewFor('stillUiPlaceholder');
             const cmpParts = Components.componentPartsMap[cmp.cmpInternalId];
             setTimeout(() => {
-                console.log(`CALLED ON ONE`);
                 Components.handleInPartsImpl(cmp, cmp.cmpInternalId, cmpParts)
             }
             );
@@ -943,20 +942,18 @@ export class Components {
         const previousContainer = container;
         if (!previousContainer) {
             //Components.markPrevContarOrphan(`cmp-name-page-view-${cmpName}`);
-            container = document.querySelector(`.cmp-name-page-view-${cmpName}`);
+            container = Components.getCmpViewContainer(cmpName, newInstance.cmpInternalId);
             container.innerHTML = '';
             ComponentRegistror.add(newInstance.cmpInternalId, newInstance);
         }
 
         container.innerHTML = newInstance.getTemplate();
-        console.log(`PRINT FROM HERE IT SLEF`);
         if (newInstance?.lone) setTimeout(() => {
             Components.emitAction(newInstance.getName(), newInstance.cmpInternalId);
         }, 200);
 
         if (!previousContainer) {
             const cmpParts = Components.componentPartsMap[newInstance.cmpInternalId];
-            console.log(`CALLED ON 2`);
             Components.handleInPartsImpl(newInstance, newInstance.cmpInternalId, cmpParts);
         }
 
@@ -983,6 +980,25 @@ export class Components {
         if (cmp.isPublic) this.registerPublicCmp(newInstance);
         else ComponentRegistror.add(cmpName, newInstance);
 
+    }
+
+    static getCmpViewContainer(cmpName, cmpId) {
+
+        let cntr = document.querySelector(`.cmp-name-page-view-${cmpName}`);
+        if (!cntr) {
+
+            cntr = document.createElement('output');
+            cntr.style.display = 'contents';
+            cntr.id = `${cmpId}-check`;
+            cntr.className = `cmp-name-page-view-${cmpName}`;
+
+            let appContr = document.getElementById($stillconst.APP_PLACEHOLDER);
+            if (!appContr) appContr = document.getElementById($stillconst.UI_PLACEHOLDER);
+            appContr.insertAdjacentHTML('afterbegin', cntr);
+
+        }
+
+        return cntr;
     }
 
     static unloadApp() {
@@ -1024,13 +1040,11 @@ export class Components {
             //ComponentRegistror.add(cmpInternalId, instance);
             const parentCmp = $still.context.componentRegistror.componentList[parentId]
             //let cmpParts = Components.componentPartsMap[cmpInternalId];
-            console.log(`CALLED ON 5`);
             if (parentCmp?.instance?.lone) {
 
                 Components.subscribeAction(
                     parentCmp.instance.getName(),
                     (placeHolderId) => {
-                        console.log(`PARTS HANDLING WILL HAPPEN`);
                         Components.handleInPartsImpl(
                             parentCmp?.instance, parentId, cmpParts, placeHolderId
                         );
