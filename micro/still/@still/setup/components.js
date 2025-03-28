@@ -1,14 +1,16 @@
 import { StillAppSetup } from "../../app-setup.js";
-import { stillRoutesMap } from "../../route.map.js";
+import { stillRoutesMap as DefaultstillRoutesMap } from "../../route.map.js";
 import { $still, ComponentNotFoundException, ComponentRegistror } from "../component/manager/registror.js";
 import { BaseComponent } from "../component/super/BaseComponent.js";
 import { BehaviorComponent } from "../component/super/BehaviorComponent.js";
 import { ViewComponent } from "../component/super/ViewComponent.js";
 import { Router } from "../routing/router.js";
 import { UUIDUtil } from "../util/UUIDUtil.js";
+import { getRoutesFile } from "../util/route.js";
 import { $stillconst } from "./constants.js";
 import { StillError } from "./error.js";
 
+const stillRoutesMap = await getRoutesFile(DefaultstillRoutesMap);
 const $stillLoadScript = (path, className, base = null) => {
 
     const prevScript = document.getElementById(`${path}/${className}.js`);
