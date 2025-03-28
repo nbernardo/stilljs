@@ -1,14 +1,16 @@
 import { StillAppSetup } from "../../app-setup.js";
-import { stillRoutesMap } from "../../route.map.js";
+import { stillRoutesMap as DefaultstillRoutesMap } from "../../route.map.js";
 import { $still, ComponentNotFoundException, ComponentRegistror } from "../component/manager/registror.js";
 import { BaseComponent } from "../component/super/BaseComponent.js";
 import { BehaviorComponent } from "../component/super/BehaviorComponent.js";
 import { ViewComponent } from "../component/super/ViewComponent.js";
 import { Router } from "../routing/router.js";
 import { UUIDUtil } from "../util/UUIDUtil.js";
+import { getRoutesFile } from "../util/route.js";
 import { $stillconst } from "./constants.js";
 import { StillError } from "./error.js";
 
+const stillRoutesMap = await getRoutesFile(DefaultstillRoutesMap);
 const $stillLoadScript = (path, className, base = null) => {
 
     const prevScript = document.getElementById(`${path}/${className}.js`);
@@ -737,7 +739,6 @@ export class Components {
 
                     if (noFieldsMap && childCmp.stDSource)
                         fields = Object.entries(cmp['$still_' + field][0]);
-
                     await inCmp.onRender();
                     childResult += await this
                         .replaceBoundFieldStElement(inCmp, fields, rec, noFieldsMap)
@@ -947,7 +948,6 @@ export class Components {
             container.innerHTML = '';
             ComponentRegistror.add(newInstance.cmpInternalId, newInstance);
         }
-
         await newInstance.onRender();
         container.innerHTML = newInstance.getTemplate();
         if (newInstance?.lone) setTimeout(() => {
@@ -1270,6 +1270,7 @@ export class Components {
             delete registror[Router.preView?.cmpInternalId];
             delete registror[Router.preView?.constructor?.name];
             const versionId = Components.removeVersionId;
+            const cmpList = $still.context.componentRegistror.componentList;
 
             setTimeout(() => {
 
@@ -1301,9 +1302,7 @@ export class Components {
                         }
                     })
             })
-
         })
-
     }
 
     static parseProxy(proxy, cmp, parentCmp, annotations) {

@@ -1,14 +1,17 @@
 import { StillAppSetup } from "../../../app-setup.js";
-import { stillRoutesMap } from "../../../route.map.js";
+import { stillRoutesMap as DefaultstillRoutesMap } from "../../../route.map.js";
 import { Router } from "../../routing/router.js";
 import { Components } from "../../setup/components.js";
 import { $stillconst, ST_RE as RE } from "../../setup/constants.js";
 import { UUIDUtil } from "../../util/UUIDUtil.js";
+import { getRoutesFile } from "../../util/route.js";
 import { $still, ComponentNotFoundException, ComponentRegistror } from "../manager/registror.js";
 import { sleepForSec } from "../manager/timer.js";
 import { STForm } from "../type/STForm.js";
 import { BehaviorComponent } from "./BehaviorComponent.js";
 import { ViewComponent } from "./ViewComponent.js";
+
+const stillRoutesMap = await getRoutesFile(DefaultstillRoutesMap);
 
 class SettingType {
     componentName = undefined;
@@ -60,6 +63,7 @@ class ComponentPart {
 }
 
 export class BaseComponent extends BehaviorComponent {
+
 
     /**
      * @type {SettingType}
