@@ -1,4 +1,5 @@
 import { ViewComponent } from "../../../@still/component/super/ViewComponent.js";
+import { Router } from "../../../@still/routing/router.js";
 
 export class EntryMenu extends ViewComponent {
 
@@ -10,11 +11,14 @@ export class EntryMenu extends ViewComponent {
 		{ name: 'Maria', skill: 'Dev' },
 	]
 
+	anotehrProp = null;
+
 	template = `
 		<div>
 			This is Entry menu component, press the bellow 
 			<br/>button or in the link to navigate to User
 			<br/>
+			My Prop value @anotehrProp
 			<br/>
 			<button (click)="goto('UserRegistration')">Register user</button>
 			<button (click)="outroEvt($event)">Test with event</button>
@@ -28,16 +32,7 @@ export class EntryMenu extends ViewComponent {
 
 			<div>My State variable is: @myVar1</div>
 
-			<br>
-			<span (forEach)="personList">
-				<div each="item">
-					<span>Nome:</span> {item.name} - 
-					<span>Skill:</span> {item.skill}
-				</div>
-			</span>
-
-			<st-element component="LoopingDirective"></st-element>
-
+			
 		</div>
 	`;
 
@@ -47,6 +42,7 @@ export class EntryMenu extends ViewComponent {
 
 	outroEvt(e) {
 		console.log(`CLICK HERE and EVENT IS: `, e);
+		Router.goto('LoopingDirective', { evt: { containerId: Router.serviceId } });
 	}
 
 }

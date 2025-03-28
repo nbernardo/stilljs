@@ -14,6 +14,7 @@ import { UUIDUtil } from "./util/UUIDUtil.js";
         .then(async () => {
 
             Router.setStillHomeUrl();
+            Components.loadCssAssets();
             StillAppSetup.loadInterceptWorker();
 
             StillAppSetup.register(Router);

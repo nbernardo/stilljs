@@ -324,7 +324,7 @@ export class Components {
                 //setTimeout(() => Components.handleInPlacePartsInit($still.context.currentView));
                 setTimeout(async () => {
                     await $still.context.currentView.stAfterInit();
-                    AppTemplate.injectToastContent();
+                    if (!Router.clickEvetCntrId) AppTemplate.injectToastContent();
                 });
 
                 return;
@@ -1570,6 +1570,19 @@ export class Components {
                 .then(() => console.log('Service Worker Registered'))
                 .catch(err => console.log('SW Registration Failed:', err));
         }
+
+    }
+
+    static loadCssAssets() {
+
+        const css1 = '@still/css/still-fundamental.css';
+        const css2 = '@still/ui/css/still.css';
+
+        [css1, css2].forEach(path => {
+            const cssTag = document.createElement('link');
+            cssTag.href = `${Router.baseUrl}${path}`;
+            document.head.insertAdjacentElement('beforeend', cssTag);
+        });
 
     }
 
