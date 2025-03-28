@@ -16,3 +16,9 @@ export async function getRoutesFile(defaultFile) {
 
     return defaultFile;
 }
+
+export function getRouter(defaultRouter) {
+    if (Router)
+        return Router;
+    return defaultRouter;
+}
