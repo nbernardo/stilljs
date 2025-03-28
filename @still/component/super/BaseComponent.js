@@ -61,7 +61,6 @@ class ComponentPart {
 
 export class BaseComponent extends BehaviorComponent {
 
-
     /**
      * @type {SettingType}
      */
@@ -112,11 +111,17 @@ export class BaseComponent extends BehaviorComponent {
 
     async load() { }
 
-    async onRender() { }
+    async onRender() {
+        this.stOnRender();
+    }
 
-    stOnUpdate() { }
+    async stOnUpdate() { }
 
-    stAfterInit() { }
+    async stAfterInit() { }
+
+    async stOnUnload() { }
+
+    async stOnRender() { }
 
     reRender() { }
 
@@ -975,10 +980,10 @@ export class BaseComponent extends BehaviorComponent {
     }
 
     stWhenReady(cb = () => { }) {
-        const timer = setTimeout(() => {
+        const timer = setTimeout(async () => {
 
             try {
-                cb();
+                await cb();
                 clearTimeout(timer);
             } catch (error) { }
 
