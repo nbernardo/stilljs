@@ -1,5 +1,3 @@
-import { ViewComponent } from "../../../@still/component/super/ViewComponent.js";
-
 export class LoopingDirective extends ViewComponent {
 
 	isPublic = true;

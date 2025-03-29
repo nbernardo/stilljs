@@ -1,5 +1,3 @@
-import { ViewComponent } from "../../../@still/component/super/ViewComponent.js";
-
 export class BasicForm extends ViewComponent {
 
 	//isPublic = true;

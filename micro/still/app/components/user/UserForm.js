@@ -1,4 +1,3 @@
-import { ViewComponent } from "../../../@still/component/super/ViewComponent.js";
 import { UserGrid } from "./UserGrid.js";
 
 export class UserForm extends ViewComponent {
