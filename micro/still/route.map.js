@@ -1,8 +1,8 @@
 
-        /**
-         * Don't change the constante name as it'll impact on the component routing
-         */
-        
+/**
+ * Don't change the constante name as it'll impact on the component routing
+ */
+
 export const stillRoutesMap = {
     viewRoutes: {
         regular: {
@@ -61,6 +61,18 @@ export const stillRoutesMap = {
             ShoppingItem: {
                 path: "app/components/data-ui",
                 url: "/data-u/shopping-item"
+            },
+            BiddingDisplay: {
+                path: "app/components/communication",
+                url: "/bid/display"
+            },
+            BidOffersComponent: {
+                path: "app/components/communication",
+                url: "/bid/offer"
+            },
+            BiddersList: {
+                path: "app/components/communication",
+                url: "/bid/bidder"
             }
         },
         lazyInitial: {}
@@ -70,9 +82,10 @@ export const stillRoutesMap = {
 
 export function $stillGetRouteMap() {
 
-	return {		route: {
-			...stillRoutesMap.viewRoutes.regular,
-			...stillRoutesMap.viewRoutes.lazyInitial
-		},
-	}
+    return {
+        route: {
+            ...stillRoutesMap.viewRoutes.regular,
+            ...stillRoutesMap.viewRoutes.lazyInitial
+        },
+    }
 }
