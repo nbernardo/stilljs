@@ -3,14 +3,17 @@ import { stillRoutesMap as DefaultstillRoutesMap } from "../../route.map.js";
 import { $still, ComponentNotFoundException, ComponentRegistror } from "../component/manager/registror.js";
 import { BaseComponent } from "../component/super/BaseComponent.js";
 import { BehaviorComponent } from "../component/super/BehaviorComponent.js";
-import { ViewComponent } from "../component/super/ViewComponent.js";
-import { Router } from "../routing/router.js";
+import { ViewComponent as defaultViewComponent } from "../component/super/ViewComponent.js";
+import { Router as DefaultRouter } from "../routing/router.js";
 import { UUIDUtil } from "../util/UUIDUtil.js";
-import { getRoutesFile } from "../util/route.js";
+import { getRouter, getRoutesFile, getViewComponent } from "../util/route.js";
 import { $stillconst } from "./constants.js";
 import { StillError } from "./error.js";
 
 const stillRoutesMap = await getRoutesFile(DefaultstillRoutesMap);
+const Router = getRouter(DefaultRouter);
+const ViewComponent = getViewComponent(defaultViewComponent);
+
 const $stillLoadScript = (path, className, base = null) => {
 
     const prevScript = document.getElementById(`${path}/${className}.js`);
@@ -103,16 +106,15 @@ export class Components {
             this.template = this.template.join('');
 
         let cntr = document.getElementById(placeHolder);
-        if (isLoneCmp) {
-            cntr = document.getElementById(isLoneCmp);
-        } else {
+        if (isLoneCmp) cntr = document.getElementById(isLoneCmp);
+        else {
             if (document.getElementById($stillconst.APP_PLACEHOLDER))
                 cntr = document.getElementById($stillconst.APP_PLACEHOLDER);
         }
 
         cntr.innerHTML = this.template;
 
-        if (isLoneCmp) setTimeout(() => {
+        if (isLoneCmp && cmp) setTimeout(() => {
             Components.emitAction(cmp.getName());
         }, 200);
 
@@ -333,7 +335,7 @@ export class Components {
             }
 
             if (document.getElementById(this.stillAppConst))
-                this.renderOnViewFor(this.stillAppConst);
+                this.renderOnViewFor(this.stillAppConst, $still.context.currentView);
             else
                 new Components().renderPublicComponent($still.context.currentView);
 
@@ -359,11 +361,11 @@ export class Components {
                 (new Components).parseGetsAndSets(cmp)
             }, 10);
 
-            this.renderOnViewFor('stillUiPlaceholder');
+            this.renderOnViewFor('stillUiPlaceholder', cmp);
+            ComponentRegistror.add(cmp.cmpInternalId, cmp);
             const cmpParts = Components.componentPartsMap[cmp.cmpInternalId];
-            setTimeout(() => {
+            setTimeout(() =>
                 Components.handleInPartsImpl(cmp, cmp.cmpInternalId, cmpParts)
-            }
             );
             Components.handleMarkedToRemoveParts();
         } else {
@@ -528,7 +530,7 @@ export class Components {
                     cmp.__defineGetter__(field, () => newValue);
                     cmp['$still_' + field] = newValue;
                     this.defineSetter(cmp, field);
-                    cmp.stOnUpdate();
+                    (async () => await cmp.stOnUpdate());
 
                     if (cmp[`$still${field}Subscribers`].length > 0) {
                         setTimeout(() => cmp[`$still${field}Subscribers`].forEach(
@@ -740,6 +742,7 @@ export class Components {
                     if (noFieldsMap && childCmp.stDSource)
                         fields = Object.entries(cmp['$still_' + field][0]);
 
+                    await inCmp.onRender();
                     childResult += await this
                         .replaceBoundFieldStElement(inCmp, fields, rec, noFieldsMap)
                         .getBoundTemplate();
@@ -949,6 +952,7 @@ export class Components {
             ComponentRegistror.add(newInstance.cmpInternalId, newInstance);
         }
 
+        await newInstance.onRender();
         container.innerHTML = newInstance.getTemplate();
         if (newInstance?.lone) setTimeout(() => {
             Components.emitAction(newInstance.getName(), newInstance.cmpInternalId);
@@ -1124,7 +1128,7 @@ export class Components {
                 instance.dynCmpGeneratedId = `st_${UUIDUtil.numberId()}`;
                 /** In case the parent component is Lone component, then child component will also be */
                 instance.lone = parentCmp.lone;
-                instance.onRender();
+                await instance.onRender();
                 instance.cmpInternalId = `dynamic-${instance.getUUID()}${component}`;
                 instance.stillElement = true;
                 instance.proxyName = proxy;
@@ -1260,37 +1264,47 @@ export class Components {
 
     static removeOldParts() {
 
-        delete $still.context.componentRegistror.componentList[Router.preView?.cmpInternalId];
-        delete $still.context.componentRegistror.componentList[Router.preView?.constructor?.name];
+        (async () => {
 
-        const versionId = Components.removeVersionId;
-        const cmpList = $still.context.componentRegistror.componentList;
+            const registror = $still.context.componentRegistror.componentList;
 
-        setTimeout(() => {
+            await registror[Router.preView?.cmpInternalId]?.instance?.stOnUnload();
+            await registror[Router.preView?.constructor?.name]?.instance?.stOnUnload();
 
-            if (versionId) {
+            delete registror[Router.preView?.cmpInternalId];
+            delete registror[Router.preView?.constructor?.name];
+            const versionId = Components.removeVersionId;
 
-                document
-                    .querySelectorAll(`.loop-container-${Router.preView.cmpInternalId}`)
-                    .forEach(elm => elm.innerHTML = '');
+            setTimeout(() => {
 
-                const list = Object
-                    .entries(cmpList)
-                    .filter(r => r[1].instance.parentVersionId == versionId)
-                    .map(r => r[0]);
+                if (versionId) {
 
-                list.forEach(
-                    versionId => delete $still.context.componentRegistror.componentList[versionId]
-                );
-            }
+                    document
+                        .querySelectorAll(`.loop-container-${Router.preView.cmpInternalId}`)
+                        .forEach(elm => elm.innerHTML = '');
 
-            Object
-                .entries($still.context.componentRegistror.componentList)
-                .forEach(r => {
-                    if (r[1].instance.navigationId < Router.navCounter)
-                        delete $still.context.componentRegistror.componentList[r[0]]
-                })
+                    const list = Object
+                        .entries(registror)
+                        .filter(r => r[1].instance.parentVersionId == versionId)
+                        .map(r => r[0]);
 
+                    list.forEach(
+                        async versionId => {
+                            await registror[versionId]?.instance?.stOnUnload();
+                            delete registror[versionId]
+                        }
+                    );
+                }
+
+                Object
+                    .entries($still.context.componentRegistror.componentList)
+                    .forEach(async r => {
+                        if (r[1].instance.navigationId < Router.navCounter) {
+                            await registror[r[0]]?.instance?.stOnUnload();
+                            delete $still.context.componentRegistror.componentList[r[0]]
+                        }
+                    })
+            })
 
         })
 
@@ -1362,7 +1376,10 @@ export class Components {
      * @param {string} event 
      */
     static emitAfterIni(cpmName) {
-        $still.context.componentRegistror.componentList[cpmName].instance.stAfterInit();
+        (async () => {
+            const registror = $still.context.componentRegistror.componentList;
+            await registror[cpmName].instance.stAfterInit();
+        })
         delete Components.afterIniSubscriptions[cpmName];
     }
 

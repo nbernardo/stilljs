@@ -1,10 +1,10 @@
 import { StillAppSetup } from "../../../app-setup.js";
 import { stillRoutesMap as DefaultstillRoutesMap } from "../../../route.map.js";
-import { Router } from "../../routing/router.js";
+import { Router as DefaultRouter } from "../../routing/router.js";
 import { Components } from "../../setup/components.js";
 import { $stillconst, ST_RE as RE } from "../../setup/constants.js";
 import { UUIDUtil } from "../../util/UUIDUtil.js";
-import { getRoutesFile } from "../../util/route.js";
+import { getRouter, getRoutesFile } from "../../util/route.js";
 import { $still, ComponentNotFoundException, ComponentRegistror } from "../manager/registror.js";
 import { sleepForSec } from "../manager/timer.js";
 import { STForm } from "../type/STForm.js";
@@ -12,6 +12,7 @@ import { BehaviorComponent } from "./BehaviorComponent.js";
 import { ViewComponent } from "./ViewComponent.js";
 
 const stillRoutesMap = await getRoutesFile(DefaultstillRoutesMap);
+const Router = getRouter(DefaultRouter);
 
 class SettingType {
     componentName = undefined;
@@ -115,11 +116,17 @@ export class BaseComponent extends BehaviorComponent {
 
     async load() { }
 
-    async onRender() { }
+    async onRender() {
+        this.stOnRender();
+    }
 
-    stOnUpdate() { }
+    async stOnUpdate() { }
 
-    stAfterInit() { }
+    async stAfterInit() { }
+
+    async stOnUnload() { }
+
+    async stOnRender() { }
 
     reRender() { }
 
@@ -978,12 +985,14 @@ export class BaseComponent extends BehaviorComponent {
     }
 
     stWhenReady(cb = () => { }) {
-        const timer = setTimeout(() => {
+        const timer = setTimeout(async () => {
 
             try {
-                cb();
+                await cb();
                 clearTimeout(timer);
-            } catch (error) { }
+            } catch (error) {
+                console.log(`Error on when ready: `, error);
+            }
 
         }, 1000);
     }
@@ -1013,7 +1022,8 @@ export class BaseComponent extends BehaviorComponent {
             let checkStyle = mt.match(styleRe), foundStyle = false;
             if (checkStyle?.length == 3) foundStyle = mt.match(styleRe)[2];
 
-            parentCmp[propMap['proxy']] = { on: () => { } };
+            this.setTempProxy(parentCmp, propMap);
+
             const { component, ref, proxy: p, each, ...tagProps } = propMap;
             const foundProps = Object.values(tagProps);
             const isThereProp = foundProps.some(r => !r.startsWith('item.'))
@@ -1055,7 +1065,22 @@ export class BaseComponent extends BehaviorComponent {
         });
 
         return template;
+    }
 
+    setTempProxy(parentCmp, propMap) {
+
+        if (propMap['proxy'] in parentCmp) {
+
+            //parentCmp[propMap['proxy']].subscribers = []
+            parentCmp[propMap['proxy']] = {
+                subscribers: [],
+                on: (evt, cb = () => { }) => {
+                    if (evt == 'load')
+                        this.subscribers.push(cb);
+                }
+            };
+
+        }
     }
 
     /** @param { ViewComponent } assigneToCmp */
