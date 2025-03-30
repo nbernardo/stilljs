@@ -1,6 +1,4 @@
 //import { ViewComponent } from "../../@still/component/super/ViewComponent.js";
-import { ViewComponent } from "https://cdn.jsdelivr.net/gh/nbernardo/stilljs@doc-website1.3/@still/component/super/ViewComponent.js";
-
 export class HomeComponent extends ViewComponent {
 
     isPublic = true;
