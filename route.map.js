@@ -1,8 +1,8 @@
 
-        /**
-         * Don't change the constante name as it'll impact on the component routing
-         */
-        
+/**
+ * Don't change the constante name as it'll impact on the component routing
+ */
+
 export const stillRoutesMap = {
     viewRoutes: {
         regular: {
@@ -17,6 +17,10 @@ export const stillRoutesMap = {
             CounterComponent: {
                 path: "app/components/counter",
                 url: "/counter/CounterComponent"
+            },
+            CDNCounterComponentExample: {
+                path: "app/components/counter",
+                url: "/for-cdn/example"
             },
             HomeWithEvent: {
                 path: "app/components",
@@ -70,9 +74,10 @@ export const stillRoutesMap = {
 
 export function $stillGetRouteMap() {
 
-	return {		route: {
-			...stillRoutesMap.viewRoutes.regular,
-			...stillRoutesMap.viewRoutes.lazyInitial
-		},
-	}
+    return {
+        route: {
+            ...stillRoutesMap.viewRoutes.regular,
+            ...stillRoutesMap.viewRoutes.lazyInitial
+        },
+    }
 }
