@@ -1245,7 +1245,7 @@ export class BaseComponent extends BehaviorComponent {
                     const commentEndPos = mt.indexOf('*/') + 2;
                     const propertyName = mt.slice(commentEndPos).replace('\n', '').trim();
 
-                    let inject, proxy, prop, propParsing, type;
+                    let inject, proxy, prop, propParsing, type, svcPath;
                     if (propertyName != '') {
 
                         const result = Components.processAnnotation(mt, propertyName);
@@ -1254,13 +1254,16 @@ export class BaseComponent extends BehaviorComponent {
                         proxy = result.proxy;
                         type = result.type;
                         propParsing = result.propParsing;
+                        svcPath = result.svcPath.replace(/\t/g, '').replace(/\n/g, '').replace(/\s/g, '').trim();
+
+                        svcPath = svcPath?.endsWith('/') ? svcPath.slice(0, -1) : svcPath;
 
                         if (inject) {
                             let service = StillAppSetup.get()?.services?.get(type);
-                            cmp.#handleServiceInjection(cmp, propertyName, type, service);
+                            cmp.#handleServiceInjection(cmp, propertyName, type, service, svcPath);
                         }
                     }
-                    cmp.#annotations.set(propertyName, { type, inject, proxy, prop, propParsing });
+                    cmp.#annotations.set(propertyName, { type, inject, proxy, prop, propParsing, svcPath });
 
                 }
             });
@@ -1271,7 +1274,7 @@ export class BaseComponent extends BehaviorComponent {
 
     }
 
-    #handleServiceInjection(cmp, propertyName, type, service) {
+    #handleServiceInjection(cmp, propertyName, type, service, svcPath) {
 
         /**
          * This is because first time service is instantiated it is assigned assynchronously
@@ -1321,24 +1324,32 @@ export class BaseComponent extends BehaviorComponent {
         cmp[propertyName] = tempObj;
         if (service) return handleServiceAssignement(service);
 
-        const servicePath = this.#getServicePath(type);
+        const servicePath = this.#getServicePath(type, svcPath);
         if (!StillAppSetup.get()?.services?.get(type)) {
 
-            (async () => {
-                /** @type { BaseService } */
-                const service = new (await import(servicePath))[type](this);
-                service.parseServiceEvents();
-                StillAppSetup.get()?.services?.set(type, service);
-                handleServiceAssignement(service);
-                Components.emitAction(type);
+            //(async () => {
+            import(servicePath)
+                .then(async cls => {
 
-            })();
+                    /** @type { BaseService } */
+                    const service = new cls[type](this);
+                    service.parseServiceEvents();
+                    StillAppSetup.get()?.services?.set(type, service);
+                    handleServiceAssignement(service);
+                    Components.emitAction(type);
+
+                })
+                .catch(err => {
+                    console.log(`Error: `, err);
+                })
+
+            //})();
 
         } else {
             Components.subscribeAction(
                 type,
                 () => {
-                    const service = this.#getServicePath(type);
+                    const service = this.#getServicePath(type, svcPath);
                     handleServiceAssignement(service);
                 }
             );
@@ -1358,11 +1369,11 @@ export class BaseComponent extends BehaviorComponent {
 
     }
 
-    #getServicePath(type) {
-        let path = StillAppSetup.get().servicePath;
-        if (path.startsWith('/')) path = path.slice(1);
-        if (path.endsWith('/')) path = path.slice(0, -1);
-        path = getBasePath('service') + '' + path;
+    #getServicePath(type, svcPath) {
+        let path = svcPath == '' ? StillAppSetup.get().servicePath : '';
+        if (path?.startsWith('/')) path = path.slice(1);
+        if (path?.endsWith('/')) path = path.slice(0, -1);
+        path = getBasePath('service', svcPath) + '' + path;
         return path + '/' + type + '.js';
     }
 

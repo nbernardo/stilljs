@@ -1416,13 +1416,12 @@ export class Components {
     }
 
     static parseAnnottationRE() {
-
         const injectOrProxyRE = /(\@Inject|\@Proxy|\@Prop){0,1}[\n \s \*]{0,}/;
+        const servicePathRE = /(\@ServicePath){0,1}[\s\\/'A-Z-a-z0-9]{0,}[\n \s \*]{0,}/;
         const commentRE = /(\@type){0,1}[\s \@ \{ \} \: \| \< \> \, A-Za-z0-9]{1,}[\* \s]{1,}\//;
         const newLineRE = /[\n]{0,}/;
         const fieldNameRE = /[\s A-Za-z0-9 \$ \# \(]{1,}/;
-        return injectOrProxyRE.source + commentRE.source + newLineRE.source + fieldNameRE.source;
-
+        return injectOrProxyRE.source + servicePathRE.source + commentRE.source + newLineRE.source + fieldNameRE.source;
     }
 
     static processAnnotation(mt, propertyName = null) {
@@ -1432,13 +1431,13 @@ export class Components {
             propertyName = mt.slice(commentEndPos).replace('\n', '').trim();
         }
 
-        let inject, proxy, prop, propParsing, type, servicePath;
+        let inject, proxy, prop, propParsing, type, servicePath, svcPath;
         if (propertyName != '') {
 
-            inject = mt.includes('@Inject');
-            servicePath = mt.includes('@ServicePath');
-            proxy = mt.includes('@Proxy');
-            prop = mt.includes('@Prop');
+            inject = mt.includes('@Inject'), servicePath = mt.includes('@ServicePath');
+            proxy = mt.includes('@Proxy'), prop = mt.includes('@Prop');
+            svcPath = !servicePath
+                ? '' : mt.split('@ServicePath')[1].split(' ')[1].replace('\n', '');
 
             if (mt.includes("@type")) {
                 type = mt.split('{')[1].split('}')[0].trim();
@@ -1448,7 +1447,7 @@ export class Components {
 
         propParsing = inject || servicePath || proxy || prop || $stillconst.PROP_TYPE_IGNORE.includes(type);
 
-        return { type, inject, servicePath, proxy, prop, propParsing, propertyName };
+        return { type, inject, servicePath, proxy, prop, propParsing, svcPath };
 
     }
 

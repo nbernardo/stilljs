@@ -35,8 +35,9 @@ export function getViewComponent(defaultViewComponent) {
     }
 }
 
-export function getBasePath(type = null) {
+export function getBasePath(type = null, servicePath = null) {
+    const basePath = `${location.origin}/${STILL_HOME}`;
     if (STILL_HOME)
-        return `${location.origin}/${STILL_HOME}${type == 'service' ? 'app/' : ''}`;
+        return `${basePath}${type == 'service' ? `app/${servicePath ? servicePath + '' : ''}` : ''}`;
     return '';
 }

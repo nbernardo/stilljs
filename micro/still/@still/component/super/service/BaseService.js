@@ -18,7 +18,7 @@ export class ServiceEvent {
 
 export class BaseService {
 
-    on() { }
+    on(evt, cb = () => { }) { }
 
     serviceId = UUIDUtil.newId();
 
