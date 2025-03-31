@@ -4,12 +4,13 @@ import { Router as DefaultRouter } from "../../routing/router.js";
 import { Components } from "../../setup/components.js";
 import { $stillconst, ST_RE as RE } from "../../setup/constants.js";
 import { UUIDUtil } from "../../util/UUIDUtil.js";
-import { getRouter, getRoutesFile } from "../../util/route.js";
+import { getBasePath, getRouter, getRoutesFile } from "../../util/route.js";
 import { $still, ComponentNotFoundException, ComponentRegistror } from "../manager/registror.js";
 import { sleepForSec } from "../manager/timer.js";
 import { STForm } from "../type/STForm.js";
 import { BehaviorComponent } from "./BehaviorComponent.js";
 import { ViewComponent } from "./ViewComponent.js";
+import { BaseService } from "./service/BaseService.js";
 
 const stillRoutesMap = await getRoutesFile(DefaultstillRoutesMap);
 const Router = getRouter(DefaultRouter);
@@ -1071,15 +1072,13 @@ export class BaseComponent extends BehaviorComponent {
 
         if (propMap['proxy'] in parentCmp) {
 
-            //parentCmp[propMap['proxy']].subscribers = []
+            if (!parentCmp[propMap['proxy']]) parentCmp[propMap['proxy']] = {};
+            parentCmp[propMap['proxy']]['subscribers'] = []
             parentCmp[propMap['proxy']] = {
-                subscribers: [],
                 on: (evt, cb = () => { }) => {
-                    if (evt == 'load')
-                        this.subscribers.push(cb);
+                    if (evt == 'load') parentCmp[propMap['proxy']].subscribers.push(cb);
                 }
             };
-
         }
     }
 
@@ -1320,32 +1319,26 @@ export class BaseComponent extends BehaviorComponent {
         }
 
         cmp[propertyName] = tempObj;
+        if (service) return handleServiceAssignement(service);
 
-        if (service) {
-            handleServiceAssignement(service);
-            return;
-        }
+        const servicePath = this.#getServicePath(type);
+        if (!StillAppSetup.get()?.services?.get(type)) {
 
-        const servicePath = StillAppSetup.get().servicePath + '/' + type + '.js';
-
-        if (!document.getElementById(servicePath)) {
-
-            const script = document.createElement('script');
-            [script.src, script.id] = [servicePath, servicePath];
-            script.onload = async function () {
-
-                const service = eval(`new ${type}()`);
+            (async () => {
+                /** @type { BaseService } */
+                const service = new (await import(servicePath))[type](this);
+                service.parseServiceEvents();
                 StillAppSetup.get()?.services?.set(type, service);
                 handleServiceAssignement(service);
                 Components.emitAction(type);
-            }
-            document.head.insertAdjacentElement('beforeend', script);
+
+            })();
 
         } else {
             Components.subscribeAction(
                 type,
                 () => {
-                    const service = StillAppSetup.get()?.services?.get(type);
+                    const service = this.#getServicePath(type);
                     handleServiceAssignement(service);
                 }
             );
@@ -1363,6 +1356,14 @@ export class BaseComponent extends BehaviorComponent {
 
         }
 
+    }
+
+    #getServicePath(type) {
+        let path = StillAppSetup.get().servicePath;
+        if (path.startsWith('/')) path = path.slice(1);
+        if (path.endsWith('/')) path = path.slice(0, -1);
+        path = getBasePath('service') + '' + path;
+        return path + '/' + type + '.js';
     }
 
 }

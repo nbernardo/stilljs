@@ -1314,19 +1314,11 @@ export class Components {
 
         const cmpName = parentCmp.constructor.name;
         if (proxy) {
+            const subscribers = parentCmp[proxy].subscribers;
             parentCmp[proxy] = cmp;
-            /* if (!(proxy in parentCmp)) {
-                AppTemplate.hideLoading();
-                throw new Error(`${cmpName}.${proxy} proxy property is not define`);
-            }
-            if (annotations?.get(proxy)?.proxy) {
 
-                parentCmp[proxy] = cmp;
-            } else {
-                AppTemplate.hideLoading();
-                throw new Error(`The ${cmpName}.${proxy} proxy is not properly annotated with @Proxy`);
-            } */
-
+            if (subscribers && subscribers.length)
+                subscribers.forEach(async cb => await cb());
         }
 
     }
@@ -1440,10 +1432,11 @@ export class Components {
             propertyName = mt.slice(commentEndPos).replace('\n', '').trim();
         }
 
-        let inject, proxy, prop, propParsing, type;
+        let inject, proxy, prop, propParsing, type, servicePath;
         if (propertyName != '') {
 
             inject = mt.includes('@Inject');
+            servicePath = mt.includes('@ServicePath');
             proxy = mt.includes('@Proxy');
             prop = mt.includes('@Prop');
 
@@ -1453,9 +1446,9 @@ export class Components {
             }
         }
 
-        propParsing = inject || proxy || prop || $stillconst.PROP_TYPE_IGNORE.includes(type);
+        propParsing = inject || servicePath || proxy || prop || $stillconst.PROP_TYPE_IGNORE.includes(type);
 
-        return { type, inject, proxy, prop, propParsing, propertyName };
+        return { type, inject, servicePath, proxy, prop, propParsing, propertyName };
 
     }
 
